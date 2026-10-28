@@ -23,6 +23,8 @@ Eight playbooks that turn your AI into a job search partner that flatters you on
 
 It works for any field: lanes are grouped from your own job titles, and you can edit them.
 
+The **Interviews** tab debriefs a transcript, caption file (.vtt, .srt), or audio recording. Audio can be transcribed privately on your own computer (the speech model downloads once, about 80 MB), or attached to your chatbot instead. The debrief feeds your question bank, story bank, and posting watch.
+
 ## Use the playbooks
 
 The playbooks are plain text in `skills/<name>/SKILL.md`, and the page has a copy button for each.

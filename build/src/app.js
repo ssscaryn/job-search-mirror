@@ -76,7 +76,8 @@ const AI = (() => {
     return null;
   }
   // Ask for JSON. `title` names the task in the paste dialog.
-  async function json(prompt, {title, onStatus} = {}){
+  async function json(prompt, {title, onStatus, forcePaste, note} = {}){
+    if(forcePaste) return pasteDialog(prompt, title, note);
     const sample = await claudeSample();
     if(sample){
       try {
@@ -173,7 +174,7 @@ const DEBRIEF_SHAPE = `{
   "new_stories": [{"title": "string", "proves": "string", "situation": "string", "action": "string", "result": "string", "sixty_second": "string"}]
 }`;
 
-function debriefPrompt({transcript, company, role, round, standards, storyTitles}){
+function debriefPrompt({transcript, company, role, round, standards, storyTitles, audioName}){
   return `You are my interview coach doing a debrief from a transcript. Be my critic before my fan: list what fell flat before anything that went well, and argue the interviewer's side.
 
 Rules:
@@ -195,10 +196,10 @@ ${storyTitles.length ? storyTitles.map(t=>"- "+t).join("\n") : "(none yet)"}
 Reply with only one JSON object in exactly this shape, no other text:
 ${DEBRIEF_SHAPE}
 
-Transcript:
+${audioName ? `The interview is in the audio file I've attached (${audioName}). Transcribe it yourself first, then do the debrief from your transcript. Audio has no speaker names, so use attribution_questions wherever you are unsure who is speaking.` : `Transcript:
 """
 ${transcript}
-"""`;
+"""`}`;
 }
 
 /* ---------- app state + rendering ---------- */
@@ -280,18 +281,20 @@ async function runDebrief(){
   const transcript = $("#ivtranscript").value.trim();
   const err = $("#iverr"); err.textContent = "";
   if(!$("#ivconsent").checked){ err.textContent = "Confirm the interviewers knew the conversation was recorded or transcribed. Without consent, paste your own notes instead."; return; }
-  if(transcript.length < 200){ err.textContent = "Paste the transcript or your notes first (at least a few paragraphs)."; return; }
+  const audioName = !transcript && Transcribe.chatbotFile ? Transcribe.chatbotFile : "";
+  if(!audioName && transcript.length < 200){ err.textContent = "Paste the transcript or your notes first (at least a few paragraphs), or upload a file."; return; }
   const meta = {company: $("#ivcompany").value.trim(), role: $("#ivrole").value.trim(), round: $("#ivround").value, date: $("#ivdate").value || today(), panel: $("#ivpanel").value.trim()};
   const btn = $("#ivrun"); btn.disabled = true; const status = $("#ivstatus");
   status.textContent = "Working on it. This can take a minute for a long interview.";
   try{
-    const debrief = await AI.json(debriefPrompt({transcript, ...meta, standards: App.standards, storyTitles: App.stories.map(s=>s.title)}),
-      {title:"Interview debrief", onStatus: s=>status.textContent = s});
+    const debrief = await AI.json(debriefPrompt({transcript, ...meta, audioName, standards: App.standards, storyTitles: App.stories.map(s=>s.title)}),
+      {title:"Interview debrief", onStatus: s=>status.textContent = s, forcePaste: !!audioName,
+       note: audioName ? `Attach your audio file (${audioName}) in ChatGPT or Gemini along with this prompt. Not every plan accepts audio; if yours doesn't, transcribe it here instead.` : ""});
     if(!debrief || !Array.isArray(debrief.questions_asked_of_me)) throw {code:"shape"};
     const iv = {id:uid(), ...meta, company: meta.company || debrief.company || "", role: meta.role || debrief.role || "", round: meta.round || debrief.round || "", transcript, debrief, createdAt: Date.now()};
     App.interviews.push(iv); await Store.set("interviews", App.interviews);
     fileIntoBanks(iv); await Store.set("questionsOfMe", App.questionsOfMe); await Store.set("questionsByMe", App.questionsByMe); await Store.set("stories", App.stories);
-    $("#ivtranscript").value = ""; status.textContent = "";
+    $("#ivtranscript").value = ""; status.textContent = ""; Transcribe.reset();
     renderInterviews(); renderBanks(); renderWatch(currentRows);
     const first = $(`#ivlist details[data-id="${iv.id}"]`); if(first) first.open = true;
     flash("Debrief saved. Questions and stories were added to your banks.");
@@ -330,10 +333,96 @@ function renderBanks(){
   $("#stories").innerHTML = App.stories.length ? App.stories.map(s=>`<details class="story"><summary><b>${esc(s.title)}</b> <span class="muted small">${esc(s.proves)}</span></summary><p class="small">${esc(s.sixty||[s.situation,s.action,s.result].filter(Boolean).join(" "))}</p><p class="small muted">From ${esc(s.source||"you")}</p></details>`).join("") : `<p class="muted small">Stories from your debriefs collect here.</p>`;
 }
 
+/* ---------- transcript files and audio ---------- */
+// Caption files (.vtt, .srt): drop cue numbers and timestamps, keep "Speaker: text".
+function captionsToText(raw){
+  return raw.replace(/\r/g,"").split("\n")
+    .filter(l => !/^WEBVTT/.test(l) && !/^\d+$/.test(l.trim()) && !/-->/.test(l) && !/^(NOTE|STYLE|REGION)\b/.test(l))
+    .map(l => l.replace(/<v\s+([^>]+)>/g, "$1: ").replace(/<\/?[^>]+>/g, "").trim())
+    .filter(Boolean)
+    // Merge consecutive lines from the same speaker.
+    .reduce((out, l) => { const m = l.match(/^([^:]{1,40}):\s*(.*)$/), last = out[out.length-1];
+      if(m && last && last.who === m[1]) last.text += " " + m[2];
+      else out.push(m ? {who:m[1], text:m[2]} : {who:"", text:l});
+      return out; }, [])
+    .map(x => x.who ? `${x.who}: ${x.text}` : x.text).join("\n");
+}
+const Transcribe = {
+  file: null, chatbotFile: "", busy: false,
+  reset(){ this.file = null; this.chatbotFile = ""; $("#ivaudio").hidden = true; $("#ivaudiostatus").textContent = ""; $("#ivfile").value = ""; },
+  async pick(file){
+    const name = file.name.toLowerCase();
+    if(/\.(txt|md|vtt|srt)$/.test(name) || file.type.startsWith("text/")){
+      const raw = await file.text();
+      $("#ivtranscript").value = /\.(vtt|srt)$/.test(name) ? captionsToText(raw) : raw;
+      this.reset(); flash(`Loaded ${file.name}.`); return;
+    }
+    if(/\.(m4a|mp3|wav|webm|ogg|aac|mp4)$/.test(name) || file.type.startsWith("audio/")){
+      this.file = file; this.chatbotFile = "";
+      $("#ivaudioname").textContent = file.name;
+      $("#ivaudiostatus").textContent = "";
+      $("#ivaudio").hidden = false;
+      // Inside claude.ai the page can't download a speech model, so only the chatbot route works there.
+      const framed = await AI.inClaude();
+      $("#ivlocal").hidden = framed;
+      $("#ivlocalnote").textContent = framed ? "Private transcription works on the website version of this page. Here, send the audio to your chatbot, or open the website to transcribe it on your computer." : $("#ivlocalnote").textContent;
+      return;
+    }
+    flash("That file type isn't supported. Use text, captions (.vtt, .srt), or audio.");
+  },
+  chatbot(){
+    if(!this.file) return;
+    this.chatbotFile = this.file.name;
+    $("#ivaudiostatus").textContent = `When you press "Debrief it", the prompt will ask your chatbot to transcribe ${this.file.name}. You'll attach the file there.`;
+  },
+  // Decode to 16 kHz mono, which is what Whisper expects.
+  async decode(file){
+    const buf = await file.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let audio;
+    try { audio = await ctx.decodeAudioData(buf); } finally { ctx.close && ctx.close(); }
+    const frames = Math.ceil(audio.duration * 16000);
+    const off = new OfflineAudioContext(1, frames, 16000);
+    const src = off.createBufferSource(); src.buffer = audio; src.connect(off.destination); src.start();
+    const rendered = await off.startRendering();
+    return {samples: rendered.getChannelData(0), seconds: audio.duration};
+  },
+  async local(){
+    if(!this.file || this.busy) return;
+    this.busy = true; const status = $("#ivaudiostatus"), btn = $("#ivlocal"); btn.disabled = true;
+    const started = Date.now(); let timer = null;
+    try{
+      status.textContent = "Reading the audio…";
+      const {samples, seconds} = await this.decode(this.file);
+      status.textContent = "Loading the speech model (about 80 MB the first time)…";
+      const tf = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1/dist/transformers.min.js");
+      let lastPct = -1;
+      const progress = p => { if(p.status === "progress" && p.total){ const pct = Math.round(100*p.loaded/p.total); if(pct !== lastPct){ lastPct = pct; status.textContent = `Downloading the speech model: ${pct}%`; } } };
+      let asr;
+      try { asr = await tf.pipeline("automatic-speech-recognition", "Xenova/whisper-base.en", {device: navigator.gpu ? "webgpu" : "wasm", progress_callback: progress}); }
+      catch { asr = await tf.pipeline("automatic-speech-recognition", "Xenova/whisper-base.en", {device: "wasm", progress_callback: progress}); }
+      const mins = Math.max(1, Math.round(seconds/60));
+      timer = setInterval(()=>{ const s = Math.round((Date.now()-started)/1000); status.textContent = `Transcribing ${mins} minute${mins>1?"s":""} of audio on your computer… ${Math.floor(s/60)}:${String(s%60).padStart(2,"0")} elapsed. Keep this tab open.`; }, 1000);
+      const out = await asr(samples, {chunk_length_s: 30, stride_length_s: 5});
+      clearInterval(timer);
+      const text = String(out && out.text || "").trim();
+      if(!text) throw new Error("empty");
+      $("#ivtranscript").value = text;
+      this.file = null; $("#ivaudio").hidden = true;
+      flash("Transcribed on your computer. Audio has no speaker names, so the debrief will ask who said what.");
+    }catch(e){
+      clearInterval(timer);
+      status.textContent = "Couldn't transcribe this file here. Try the chatbot route, or convert it to .mp3 or .wav and try again.";
+    }finally{ this.busy = false; btn.disabled = false; }
+  }
+};
+
 /* ---------- wiring ---------- */
 document.addEventListener("click", async e=>{
   const t = e.target;
   if(t.id === "ivrun") runDebrief();
+  if(t.id === "ivlocal") Transcribe.local();
+  if(t.id === "ivchatbot") Transcribe.chatbot();
   if(t.id === "exportbtn") exportBackup();
   if(t.id === "importbtn") $("#importfile").click();
   if(t.dataset && t.dataset.act === "del"){
@@ -345,6 +434,7 @@ document.addEventListener("click", async e=>{
 });
 document.addEventListener("change", e=>{
   if(e.target.id === "importfile" && e.target.files[0]) importBackup(e.target.files[0]);
+  if(e.target.id === "ivfile" && e.target.files[0]) Transcribe.pick(e.target.files[0]);
 });
 document.addEventListener("input", e=>{
   if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); }, 500); }

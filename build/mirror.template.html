@@ -180,6 +180,14 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
       </div>
       <div style="margin-top:10px"><label class="f" for="ivpanel">Panel observation (optional)</label><input class="t" id="ivpanel" placeholder="Your own description of the panel as a whole, e.g. 'all men'. Never about a named person."></div>
       <label class="small" style="margin-top:12px;display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="ivconsent" style="margin-top:3px;flex:none"> <span>The interviewers knew the conversation was being recorded or transcribed. (California and several other states require everyone's consent. Without it, paste your own notes instead.)</span></label>
+      <div class="row small" style="margin-top:12px"><label class="btn" for="ivfile" style="cursor:pointer">Upload a file</label><input type="file" id="ivfile" hidden accept=".txt,.md,.vtt,.srt,.m4a,.mp3,.wav,.webm,.ogg,.aac,.mp4,text/plain,audio/*"><span class="muted">Text, captions (.vtt, .srt), or audio (.m4a, .mp3, .wav). Or paste below.</span></div>
+      <div class="note small" id="ivaudio" hidden style="margin-top:10px">
+        <b id="ivaudioname"></b>
+        <p style="margin:6px 0">Audio needs turning into text first. Pick how:</p>
+        <div class="row"><button class="btn primary" id="ivlocal">Transcribe here, privately</button><button class="btn" id="ivchatbot">Send the audio to my chatbot instead</button></div>
+        <p class="muted" id="ivlocalnote" style="margin:8px 0 0">Transcribing here runs on your own computer, so the audio never leaves it. The first time downloads about 80 MB, and a 45-minute interview can take several minutes. English only for now.</p>
+        <p id="ivaudiostatus" style="margin:8px 0 0"></p>
+      </div>
       <textarea id="ivtranscript" placeholder="Paste the transcript or your notes here" style="margin-top:10px;min-height:180px"></textarea>
       <div class="row" style="margin-top:10px"><button class="btn primary" id="ivrun">Debrief it</button><span class="small muted" id="ivstatus"></span></div>
       <p class="small" id="iverr" style="color:var(--bad-ink);margin:8px 0 0"></p>
