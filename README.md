@@ -73,7 +73,7 @@ python3 build/build.py
 
 This embeds the playbooks and the latest California layoff filings into `index.html` and `site/mirror.html`.
 
-Questions or ideas: find Caryn Moore on LinkedIn.
+Questions or ideas: [connect with Caryn Moore on LinkedIn](https://www.linkedin.com/in/caryn-moore-cisa-5036a91).
 
 ## License
 
