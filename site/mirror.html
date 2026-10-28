@@ -1,0 +1,739 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Make the Mirror True</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f3ece2; --ink:#2a211c; --ink-2:#6f6259;
+  --line:#e6dccf; --ember:#c8501c; --ember-soft:#f7e2d6; --gold:#b98a1f; --sage:#5d7d5a;
+  --warn-bg:#fbefd9; --warn-ink:#8a5a07; --bad-bg:#f8e0dc; --bad-ink:#9b2f1f;
+  --flow:#c8501c; --flow-2:#b98a1f; --flow-3:#9a8d82; --flow-ok:#5d7d5a;
+  --shadow:0 1px 2px rgb(42 33 28 / .06), 0 8px 24px rgb(42 33 28 / .06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17120f; --surface:#211a16; --surface-2:#2a221d; --ink:#f3ebe2; --ink-2:#b4a598;
+    --line:#3a2f28; --ember:#ee7a44; --ember-soft:#3b2318; --gold:#dcae45; --sage:#8fb38a;
+    --warn-bg:#3a2c12; --warn-ink:#f0c46a; --bad-bg:#3d1d17; --bad-ink:#f39a87;
+    --flow:#ee7a44; --flow-2:#dcae45; --flow-3:#7d7067; --flow-ok:#8fb38a;
+    --shadow:0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17120f; --surface:#211a16; --surface-2:#2a221d; --ink:#f3ebe2; --ink-2:#b4a598;
+  --line:#3a2f28; --ember:#ee7a44; --ember-soft:#3b2318; --gold:#dcae45; --sage:#8fb38a;
+  --warn-bg:#3a2c12; --warn-ink:#f0c46a; --bad-bg:#3d1d17; --bad-ink:#f39a87;
+  --flow:#ee7a44; --flow-2:#dcae45; --flow-3:#7d7067; --flow-ok:#8fb38a;
+  --shadow:0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.05}
+h2{font-size:1.45rem;margin-bottom:6px}
+h3{font-size:1.08rem}
+.eyebrow{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);font-weight:600}
+.lede{color:var(--ink-2);max-width:62ch;font-size:1.05rem;margin:12px 0 0}
+header{padding-block:12px 24px;border-bottom:1px solid var(--line);margin-bottom:22px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 0}
+nav.tabs button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:8px 16px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.stat .n{font-family:Fraunces,Georgia,serif;font-size:2.1rem;font-weight:700;line-height:1}
+.stat .l{color:var(--ink-2);font-size:.86rem;margin-top:6px}
+.stat.hl{background:var(--ember-soft);border-color:transparent}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer}
+.btn.primary{background:var(--ember);border-color:var(--ember);color:var(--bg)}
+.muted{color:var(--ink-2)}
+.small{font-size:.86rem}
+section{margin-top:22px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);font-weight:600}
+.flag{display:inline-block;font-size:.72rem;font-weight:600;line-height:1.5;padding:1px 8px;border-radius:999px;margin:2px 3px 2px 0;white-space:nowrap;cursor:default}
+.ev{margin-top:4px}
+.ev summary{font-size:.76rem;color:var(--ink-2);cursor:pointer;list-style:none}
+.ev summary::-webkit-details-marker{display:none}
+.ev ul{margin:4px 0 0;padding-left:16px;font-size:.8rem;color:var(--ink-2)}
+.ev li b{color:var(--ink);font-weight:600}
+.stagekey{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);font-weight:600;margin:0 6px 0 10px}
+.stagekey:first-child{margin-left:0}
+.flag.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.flag.bad{background:var(--bad-bg);color:var(--bad-ink)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:80px}
+.bar>i{display:block;height:100%;background:var(--ember)}
+textarea{width:100%;min-height:120px;font:13px/1.45 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface-2);color:var(--ink)}
+svg text{font-family:Inter,system-ui,sans-serif}
+.note{border-left:3px solid var(--gold);padding:8px 12px;background:var(--surface-2);border-radius:0 10px 10px 0}
+.pb-list{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.pb{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.pb[aria-pressed="true"]{outline:2px solid var(--ember)}
+#convertby button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pb .t{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.05rem}
+.pb .s{color:var(--ember);font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+pre.play{white-space:pre-wrap;word-break:break-word;font:13px/1.55 ui-monospace,Menlo,monospace;background:var(--surface-2);border-radius:12px;padding:16px;max-height:460px;overflow:auto;margin:12px 0 0}
+.how{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.how b{display:block;margin-bottom:4px}
+footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Women in Security · November 12</div>
+    <h1>Make the mirror true.</h1>
+    <p class="lede">Your job search, told by your own data. Load a tracker to see your funnel, where you stall, your pace, and which postings show warning signs. Everything runs in this page; nothing you load leaves your device.</p>
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="mirror">Your mirror</button>
+      <button role="tab" aria-selected="false" data-tab="postings">Posting watch</button>
+      <button role="tab" aria-selected="false" data-tab="playbooks">Playbooks for any AI</button>
+      <button role="tab" aria-selected="false" data-tab="load">Load your tracker</button>
+    </nav>
+  </header>
+
+  <div id="banner" class="note small" style="margin-bottom:18px"></div>
+
+  <!-- MIRROR -->
+  <div data-panel="mirror">
+    <div class="grid stats" id="stats"></div>
+    <section class="card">
+      <h2>Where your applications go</h2>
+      <p class="muted small" style="margin:0 0 10px">Every application, from sent to the furthest round it reached.</p>
+      <div class="scroll"><svg id="sankey" role="img" aria-label="Application funnel" width="1000" height="440"></svg></div>
+    </section>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:22px">
+      <section class="card" style="margin:0">
+        <h2>What converts</h2>
+        <p class="muted small" style="margin:0 0 10px">How often each kind of role turned into an interview. Trust the data over your instinct about where your strength is.</p>
+        <div class="row small" id="convertby" style="margin-bottom:8px"><button class="btn" data-by="family" aria-pressed="true">By lane</button><button class="btn" data-by="level" aria-pressed="false">By level</button></div>
+        <div class="scroll"><table id="lanes"></table></div>
+        <p class="small muted" id="lanenote" style="margin:8px 0 0"></p>
+        <details id="laneedit" hidden style="margin-top:8px"><summary class="small" style="cursor:pointer;font-weight:600">Edit lanes</summary>
+          <p class="small muted" style="margin:6px 0">One lane per line: a name, a colon, then words from job titles that belong to it. The first line that matches wins, so put specific lanes first.</p>
+          <textarea id="lanerules" style="min-height:110px"></textarea>
+          <div class="row" style="margin-top:6px"><button class="btn primary" id="laneapply">Apply</button><button class="btn" id="lanereset">Reset to automatic</button></div>
+        </details>
+      </section>
+      <section class="card" style="margin:0">
+        <h2>Keep the reps up</h2>
+        <p class="muted small" style="margin:0 0 10px">Applications per week. When interviews ramp up, this is the line that quietly collapses. The dashed line is a floor of 12.</p>
+        <div class="scroll"><svg id="pace" role="img" aria-label="Applications per week" width="480" height="210"></svg></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- POSTINGS -->
+  <div data-panel="postings" hidden>
+    <section class="card" style="margin-top:0">
+      <h2>Posting watch</h2>
+      <p class="muted" style="margin:0 0 12px">What you observed about each company, from the posting to the offer. These are facts from your own tracker, not verdicts: a long-open role can be a hard seat to fill, or a posting nobody intends to fill. Use them to decide where your limited applications go.</p>
+      <div class="row" id="flagkey" style="margin-bottom:8px;align-items:flex-start"></div>
+      <p class="small muted" id="warnnote" style="margin:0 0 10px"></p>
+      <div class="scroll"><table id="watch"></table></div>
+    </section>
+  </div>
+
+  <!-- PLAYBOOKS -->
+  <div data-panel="playbooks" hidden>
+    <section class="card" style="margin-top:0">
+      <h2>Playbooks for any AI</h2>
+      <p class="muted" style="margin:0 0 14px">Eight playbooks, one per part of the talk. They work in ChatGPT, Gemini, or Claude. Each one makes the AI name what fell flat before it is allowed to tell you what went well.</p>
+      <div class="grid how small">
+        <div><b>ChatGPT</b>Paste it at the start of a chat, or into a Project's instructions so every chat in it follows the playbook.</div>
+        <div><b>Gemini</b>Create a Gem and paste the playbook as its instructions.</div>
+        <div><b>Claude</b>Paste it into a Project's instructions, or install the skill version from the kit.</div>
+      </div>
+    </section>
+    <div class="grid pb-list" id="pblist" style="margin-top:16px"></div>
+    <section class="card" id="pbview">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="pbtitle"></h2>
+        <button class="btn primary" id="copy">Copy playbook</button>
+      </div>
+      <p class="muted small" id="pbdesc" style="margin:4px 0 0"></p>
+      <pre class="play" id="pbtext"></pre>
+    </section>
+  </div>
+
+  <!-- LOAD -->
+  <div data-panel="load" hidden>
+    <section class="card" style="margin-top:0">
+      <h2>Load your tracker</h2>
+      <p class="muted" style="margin:0 0 12px">Choose your tracker file: Excel (.xlsx, .xls), OpenDocument (.ods), or CSV from Google Sheets, Numbers, or Notion. You can also paste CSV below. Column names are matched loosely, so your own format usually works.</p>
+      <div class="row">
+        <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.ods,.csv,text/csv">
+        <button class="btn" id="sample">Use the sample search</button>
+        <button class="btn" id="template">Show the template</button>
+      </div>
+      <div class="row small" id="sheetpick" hidden style="margin-top:12px"><label for="sheet"><b>Sheet</b></label><select id="sheet" class="btn"></select><span class="muted" id="sheetwhy"></span></div>
+      <textarea id="paste" placeholder="Or paste CSV here" style="margin-top:12px"></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="loadpaste">Load pasted CSV</button><span class="small muted" id="loadmsg"></span></div>
+    </section>
+    <section class="card">
+      <h3>Columns it understands</h3>
+      <table class="small" style="margin-top:8px">
+        <tr><th>Column</th><th>Used for</th></tr>
+        <tr><td>Date applied</td><td>Pace, silence after 30 days</td></tr>
+        <tr><td>Company · Role title</td><td>Posting watch</td></tr>
+        <tr><td>Role family</td><td>What converts</td></tr>
+        <tr><td>Posting age (e.g. "3 days", "6 weeks")</td><td>Open 60+ days</td></tr>
+        <tr><td>Times reposted</td><td>Repeat reposts</td></tr>
+        <tr><td>Comp band</td><td>Missing pay band</td></tr>
+        <tr><td>Furthest round (Screener, Hiring manager, Panel, Offer)</td><td>Funnel, where you stall</td></tr>
+        <tr><td>Outcome (No response, Rejected, Active, Offer, Withdrawn)</td><td>Funnel, response rate</td></tr>
+        <tr><td>Source · Client disclosed · Approved submission · Scam signals</td><td>Recruiter flags, agencies shopping a role</td></tr>
+        <tr><td>Number of rounds · Interview hours · Take-home hours · First contact · Decision date</td><td>Long process</td></tr>
+        <tr><td>Interviewers · Panel observation (your view of the panel as a whole)</td><td>Homogeneous panel</td></tr>
+        <tr><td>Possibly unlawful questions · Resume misstated · Rescheduled by company · Ghosted after final</td><td>Process flags</td></tr>
+        <tr><td>Offer changes</td><td>Offer flags</td></tr>
+      </table>
+      <p class="small muted" style="margin:10px 0 0">You don't have to type the interview columns yourself. The Interview debrief playbook fills them in from your transcript.</p>
+    </section>
+  </div>
+
+  <footer>From the talk <i>Getting in Touch with Your Inner Narcissist to Accelerate Your Job Search</i> by Caryn Moore. The sample search is fictional. Find Caryn on LinkedIn.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const PLAYBOOKS = [{"section": "Start here", "title": "My standards", "blurb": "Your rulebook and the claims you can defend. Every other playbook leans on it.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# My Standards\n\nThis file belongs to the job seeker. It starts with a few rules that work for almost everyone and grows every time the AI gets something wrong. When they catch a mistake, add a rule here in one line, with the date. Never remove a rule they wrote.\n\n## How to use this skill\n\n1. Read this whole file before writing anything in their voice.\n2. Read the **Claim ledger** before stating any fact about their experience. If a fact is not in the ledger and you are not certain of it, stop and ask. Batch your questions into one message **before** writing, never after delivering.\n3. When they correct you, offer to add the correction here as a new rule. Show them the exact line you would add.\n\n## Writing rules (starter set)\n\n1. **State what is.** Avoid sentences built on what something is not: \"not X but Y\", \"rather than\", \"isn't just\", \"without sacrificing\". Say the positive thing directly.\n2. **No rule-of-three cadence.** Three parallel items for rhythm (\"strategy, teams, and tooling\") is the most recognisable AI tell. Use pairs, single strong claims, or genuine factual lists.\n3. **Never parrot the job description.** If a line could be traced back to the posting with a highlighter, rewrite it from their actual experience. Spell out the posting's key terms once for applicant tracking systems, then move on.\n4. **No dashes as connectors.** Use a colon, a comma, or a new sentence.\n5. **Positive vocabulary.** Interviewers increasingly run AI note takers. Words that summarise well (\"delivered\", \"owned\", \"fit\") help the summary someone else reads later.\n6. **Final pass is human.** Always tell them to read it once before it goes out the door. You cannot be the last check.\n\n## Claim ledger\n\nFacts they have confirmed, with the exact wording they approved. Fill this in together during the first resume session.\n\n| Topic | Approved wording | Never say |\n|---|---|---|\n| _example: coding_ | _\"built AI-assisted with agentic tools\"_ | _\"wrote production Python\"_ |\n| _example: certifications_ | _\"led the program build\"_ | _\"achieved certification\" (it happened after I left)_ |\n| _example: client names_ | _\"major financial institutions\"_ | _any named client_ |\n\n## Corrections log\n\nAppend one line per correction: date, what went wrong, the rule it became.\n\n- _YYYY-MM-DD: invented a metric (\"x3\"). Rule: never create a count or percentage I did not give you._\n\n## Tone\n\nBe a steady partner, not a cheerleader. Own a mistake in one sentence and fix it. A job search is hard on people; keep the language warm and the analysis honest.\n"}, {"section": "Vanity", "title": "Honest resume", "blurb": "Tailor to the posting, then rate every claim for whether it survives a technical round.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Honest Resume\n\nThe model writes to sound impressive. The interview panel reads to find the claim that collapses. This skill keeps the confidence and strips the claims that will not survive a real question from someone who does the job. The question behind every line: **is this me, or a portrait I can defend?**\n\n## Inputs to ask for\n\n- Their LinkedIn profile (export or paste)\n- One or more past resumes, including ones that did not work\n- The job description\n- Their **my-standards** claim ledger, if it exists\n\nIf any are missing, ask once for all of them before starting.\n\n## Process\n\n1. **Read my-standards.** Follow its writing rules and claim ledger exactly.\n2. **Pick the lane.** Name the kind of role this posting belongs to, in the job seeker's own terms (for example product design versus UX research, clinical versus nurse management, data engineering versus analytics). Lead with experience from that lane, even if they have more in another. A reader rarely credits two careers at once.\n3. **Draft the tailored version.** Keep their existing layout. If you have not seen it rendered, ask for a recent file and match it.\n4. **Run the truth audit.** Produce a table, one row per claim:\n\n   | Claim | Rating | Why | Question a panel would ask |\n   |---|---|---|---|\n\n   - **Green:** in the ledger or in their own past materials, specific, and defensible.\n   - **Yellow:** true but stretched in scope, number, or ownership. Suggest the honest wording.\n   - **Red:** not supported by anything they gave you (an invented tool, language, metric, or title). Remove it or ask.\n\n5. **Ask before fixing reds.** One batched set of questions. Never resolve a red by guessing.\n6. **Mark the reach.** If the role is a stretch, say so plainly and help them send it with conviction anyway. Reaching is allowed. Inventing is not.\n7. **Log it.** Remind them to save the exact submitted version with the company name and date. The prep card for this job will need it.\n\n## LinkedIn alignment\n\nWhen asked to align LinkedIn: the headline and About section should point at the same lane as their best converting resumes (check the tracker if available). Interviewers probe gaps between the resume and the profile. If they are searching two lanes, write a headline that holds both without leaning on either.\n\n## Be the critic\n\nBefore you call anything strong, list what a skeptical hiring manager would doubt. Only then say what works.\n"}, {"section": "Vanity", "title": "Job triage", "blurb": "Rank saved jobs, save top choices for later, park slow portals.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Job Triage\n\nA search runs on volume: often a few hundred applications and dozens of interviews over two to three months. Time per application is the budget. This skill decides where it goes.\n\n## Process\n\n1. **Read every posting.** Screenshots are fine. Pull out: company, title, location and onsite days, comp band if listed, posting age or \"reposted\", and anything they told you they care about (commute, dogs, team size).\n2. **Score fit honestly.** Use their tracker if available: which role families actually convert for them? Rank by evidence of what lands, not by which experience they have the most of. If the data and your instinct disagree, say so and trust the data.\n3. **Sort into three groups:**\n   - **Apply now:** strong fit, quick application (one page, or a short easy apply).\n   - **Save for when you are warmed up:** their top choice companies. Early resumes, screeners, and skills interviews produce lessons; spend those on roles that matter less. Watch posting age so these do not expire while they practice.\n   - **Park:** anything that needs an account or a multi-page portal. Log it to the tracker's Revisit list **with the reason**. Suggest checking the company's own careers page for another route if fit is strong.\n4. **Flag stale postings.** \"Reposted\" or older than a few weeks: note it, do not hide it.\n5. **Hand back a numbered list** with one line of reasoning per job and a time estimate for the session.\n\n## Check the employer and the recruiter\n\n- **Layoffs:** ask whether the company has filed recent WARN layoff notices (public state filings; the Make the Mirror True page checks California's). A match is a lead to verify, never proof.\n- **External recruiters:** ask who the client is before agreeing to anything. Log \"Client disclosed: No\" if they will not say. Never let a recruiter submit the resume without explicit approval; two agencies submitting the same person can disqualify them.\n- **Same role, many agencies:** if the same job keeps arriving through different recruiters, note it.\n- **Scam patterns:** contact only through Telegram, WhatsApp, or Signal; a personal email domain for a company recruiter; an offer before any interview; requests for an ID number, bank details, or payment; being asked to buy equipment and get reimbursed; pay far above the market band. If two or more appear, tell them plainly to stop and verify the recruiter through the company's own site.\n\n## Reaching\n\nInclude a couple of stretch roles each session and label them as reaches. Track how reaches convert so they learn from them either way.\n\n## Be the critic\n\nFor each top-ranked job, name the strongest reason they might be screened out. Then rank.\n"}, {"section": "Preoccupation", "title": "Search tracker", "blurb": "The AI keeps your tracker and tells you what the numbers say.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Search Tracker\n\nFeelings swing during a search. The tracker keeps them honest. It is there to provide data, and the data is what backs up their confidence on a bad day.\n\n## The tracker\n\nIf they do not have one, create it from `job-tracker-template.csv` in this skill folder (or the columns below) in whatever they use: a spreadsheet, a CSV, a Notion table. If they already have one, **keep their format exactly** and never restructure it without asking.\n\nCore columns: Date applied · Company · Role title · Role family · Resume version · Location / onsite days · Commute cost per office day · Comp band · Source · Posting age · Times reposted · Furthest round · Outcome · Notes · Revisit reason.\n\nRed flag columns (filled in by **job-triage**, **interview-debrief**, and **salary-script** as they come up): Client disclosed · Approved submission · Scam signals · Number of rounds · Interview hours · Take-home hours · First contact · Decision date · Interviewers · Panel observation · Possibly unlawful questions · Resume misstated · Rescheduled by company · Ghosted after final · Offer changes.\n\nRules:\n- **You maintain it.** When they tell you about an application or a response in plain language, write the row and tell them exactly what changed.\n- **Check the real date** before stamping anything. Ask if unsure.\n- **Never invent a cause.** If a status is unclear, ask.\n\n## Analysis they can ask for\n\n1. **Funnel / Sankey.** Applied → no response / rejected / screener → hiring manager → panel or technical → offer. Draw it as a Sankey (an artifact or SVG). Show counts and percentages.\n2. **Conversion by lane.** Response and interview rate by role family and by resume version. Small samples get a warning (\"1 of 2 is not a trend\").\n3. **Where they stall.** Advancement rate per round. This is often the most useful single number in the search.\n4. **Pace.** Applications per week alongside interviews per week. When interviews ramp up, applications usually collapse, and a few weeks later the pipeline looks like it ended on its own. Suggest a steady floor (around a dozen applications a week while interviewing) and show them when they drop below it.\n5. **Any question they bring.** \"Does it matter who interviews me?\" Cut the data and report what it shows, even when the comforting story is different.\n\n6. **Red flags by company.** Group what they observed by stage (posting, recruiter, process, offer): postings open 60+ days, repeat reposts, no pay band, roles shopped by several agencies, recent layoff filings, clients not named, submissions without approval, scam patterns, long processes, possibly unlawful questions, resume misstatements, homogeneous panels, repeated rescheduling, ghosting after the final round, offers that changed. Show the evidence next to each flag, and word every one as an observation.\n\n## Bad days\n\nWhen they say they feel the search is failing, look at the numbers with them first. Name what is genuinely working (a response rate that is good for the market, an active pipeline) and the one thing that would most improve it. Keep it short and kind.\n\n## Privacy\n\nCompany and interviewer names stay in their tracker. Strip them from any chart or summary meant to be shared or presented.\n"}, {"section": "Self-surveillance", "title": "Interview debrief", "blurb": "Consent, attribution check, then question by question game tape.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Interview Debrief\n\nIn the interview they were actively talking. Now they get to actively listen. Athletes watch their film after every game; this is the film.\n\n## Consent first\n\nBefore analysing a transcript, confirm the recording was made with the interviewer's knowledge. California and several other US states require every party's consent, and it is good form everywhere: tell them a note taker is running and give them the chance to decline. If they did not get consent, work from their written notes instead.\n\n## Attribution check (do this before any analysis)\n\nAI note takers often credit a line to the wrong speaker, especially when people talk over each other. A misattributed line can make a weak interview read as a strong one.\n\n1. List every passage where the speaker is uncertain or the content seems out of character.\n2. Ask the user to confirm who said each one. The interview is fresh in their mind.\n3. Only then continue.\n\n## Question by question\n\nFor every question they were asked:\n\n| # | Question (verbatim) | Their answer (short) | Landed? | Stronger answer | Story bank link |\n|---|---|---|---|---|---|\n\n- **Landed?** Yes / partly / no, with the evidence: did the interviewer follow up, move on fast, or lean in?\n- **Stronger answer:** in their voice, true to their claim ledger, under 90 seconds spoken.\n- Mark answers that rambled and where they buried the lead.\n\n## Game tape summary\n\n- What made them lean in\n- What fell flat (be specific; this section must never be empty)\n- Proof points to follow up on in a thank-you note\n- Which voice they used (specialist, adjacent field, business, recruiter friendly) and whether it fit the person\n\n## Two lists for next time\n\n1. **Questions asked of them**, verbatim. These predict the next round.\n2. **Questions they asked**, with the answers they got. Pull out the interviewer's operating manual: how they weigh risk, what failure looks like to them, what they need in the first year, their exact vocabulary.\n\nHand both lists to **prep-card** and new or improved stories to **story-bank**.\n\n## Red flags to log\n\nPull these from the transcript and write them into the tracker row for this company, so the job seeker never has to type them. State each one as an observation with the evidence, never as a verdict.\n\n- **Interviewers:** how many were in the room.\n- **Panel observation:** ask the job seeker how they would describe the panel as a whole (for example \"all men\"). **Never infer gender, race, or age from names or voices.** Record their words, for the panel, never for a named person.\n- **Possibly unlawful questions:** any question about age, children or family plans, marital status, religion, national origin, disability or health, pregnancy, or salary history (illegal to ask in California and a growing number of states). Quote the question. Note that laws vary by location and this is a flag, not a legal finding.\n- **Resume misstated:** anything an interviewer said the resume claims that it does not. Quote both the line and the resume.\n- **Process signals:** number of rounds so far, total interview hours, any take-home assignment and its length, interviews the company rescheduled, and scope that changed between rounds.\n\nIf something in the interview was clearly mistreatment, offer to help draft candidate experience feedback using specifics from the transcript.\n\n## Going deeper (optional)\n\nOffer a word by word pass on any single answer: which phrase created the follow-up, where attention dropped, which sentence to cut.\n\n## Be the critic\n\nLead with what fell flat. Argue the interviewer's side. Only after that, say what went well. If the interview went badly because the interviewer behaved badly, help them document specifics from the transcript; candidate experience feedback is worth sending.\n"}, {"section": "Need for admiration", "title": "Story bank", "blurb": "True stories in every voice you need, timed for the room.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Story Bank\n\nThey will tell each story fifty times, so they had better like it. A story they are bored with bores the room. A story they love gets better every telling.\n\n## Each entry\n\n```\n## <Short title>\nLanes: <the kinds of roles this story fits>\nProves: <the competency or question it answers>\nSource: <their own account | debrief YYYY-MM-DD>\n\nSituation / Task / Action / Result (STAR, if they like it)\n\nVoices\n- Specialist (in your field's own language): ...\n- Adjacent field (how a neighbouring team would hear it): ...\n- Business leader: ...\n- Recruiter / HR (no jargon): ...\n\n60-second version: ...\nFacts to keep straight: dates, numbers, their exact role (check the claim ledger)\nLikely follow-ups: ...\n```\n\n## Rules\n\n- **True stories only.** Every fact must match the **my-standards** claim ledger. Ask when unsure.\n- **Same story, different voice.** One experience can prove different things to different rooms. Rewrite the framing, never the facts.\n- **Time it.** Aim for a 60 to 90 second spoken version. Mark the sentence to drop if they are running long.\n- **Index it.** Keep a short table at the top mapping common questions to two candidate stories each, so in the room they can say \"I have a couple of examples\" and pick.\n- **Grow it from debriefs.** When **interview-debrief** finds a strong answer, offer to add or improve an entry.\n\n## Be the critic\n\nFor each story, name the weakest link: the part a sharp interviewer would poke. Suggest the fix.\n"}, {"section": "Mirroring", "title": "Prep card", "blurb": "Interviewer research, ranked questions, and the closer.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Prep Card\n\nThe questions they ask are an instrument. Good questions make an interviewer see a peer instead of a candidate, and they pull the interviewer's operating manual into the open.\n\n## Inputs\n\n- Company, role, round, interviewer names and titles\n- The exact resume submitted for this job (attach it to the card)\n- Notes or debriefs from earlier rounds\n- Their story bank and question bank, if they exist\n\n## The card\n\n1. **The room.** Who they are meeting and what each person likely cares about. Look up each interviewer's background (their path, past companies, public writing) and find one authentic point of connection. This is mirroring: reflect their priorities back, generously and honestly.\n2. **Their language.** Vocabulary, frameworks, and priorities surfaced in earlier rounds. Use them back in this one.\n3. **Likely questions → stories.** Predicted questions (from the posting and earlier rounds) mapped to two stories each from the story bank.\n4. **Truth audit of the submitted resume.** Green / yellow / red per claim, with the honest wording ready. If a claim is challenged, they read the bullet aloud before answering.\n5. **Questions to ask, ranked.**\n   - Softballs that suit anyone at the company (culture, leadership tone, favourite part of working there).\n   - Seat-specific questions only this interviewer can answer (the team they would inherit, what success looks like in a year, how risk is weighed).\n   - Order them so the questions that earned the best reactions in past interviews come last.\n6. **The closer.** Always the final question: *\"Is there anything in my resume, my experience, or what we've discussed today that gives you any hesitation, that I could speak to?\"* It asks them to show their cards while there is still time to answer.\n7. **Watch.** One or two things to be careful of in this room (a known gap, a past stumble, a tough interviewer style).\n\n## Question bank\n\nKeep a running bank of questions they ask, each with how it landed and in which kind of round. Update it from every **interview-debrief**.\n\n## Delivery\n\nIf they have a card layout they like, open a past card and match it exactly. Keep live company and interviewer names off anything meant to be shared.\n"}, {"section": "The salary question", "title": "Salary script", "blurb": "Four moves in 90 seconds, plus recruiter role-play.", "text": "I'm running a job search and want you to follow this playbook for the rest of our conversation. If I haven't given you what it needs, ask me for it first.\n\n# Salary Script\n\nMany people never negotiate, and women in particular are trained out of asking and penalised as \"difficult\" when they do. As a script, it takes about 90 seconds.\n\n## The four moves\n\n1. **Never name the first number.** There is no reason to anchor against yourself. Ask for the band: *\"Do you have the band for this role?\"*\n2. **Make them surface the range.** Keep the recruiter talking about their number, never yours. Some people use a riskier variant: implying the band was missing from the posting. It can shift the power in the conversation, but it can also cost trust. Treat it as high risk and only use it when the room clearly allows it.\n3. **Validate the band, then claim the top with a reason.** *\"That works. I'd expect to land toward the top of that band given the cost of living here and how closely my experience matches what you need.\"* Give a specific reason: location, track record, scope.\n4. **Reassure.** *\"The range looks good.\"* Warmth keeps it from reading as combative. Then stop talking.\n\n## Practice mode\n\nOffer to play the recruiter. Run the conversation several times, varying the recruiter: friendly, rushed, pushes for their number first, says the band is fixed. After each run, give one specific note.\n\n## The real number\n\nHelp them price the offer, not just the salary:\n- Office days per week × (commute cost + tolls + parking + pet or child care for those days) × working weeks\n- Benefits differences, equity vesting and cliff, bonus history\n- Show two offers side by side in actual take-home terms if they have more than one\n\nUse the commute and cost columns from their **search-tracker** if available.\n\n## Offer red flags\n\nLog any of these in the tracker's \"Offer changes\" column: a band or title lower than the posting, a deadline under a few days, pressure to name a number first after the band was withheld, or terms that differ from what was said in interviews. Help them ask about each one calmly before deciding.\n\n## Be the critic\n\nBefore they accept, list what they have not asked for that is commonly negotiable (start date, sign-on bonus, title, remote days, level). Let them decide.\n"}];
+const FLOOR = 12;
+const TEMPLATE = "Date applied,Company,Role title,Role family,Source,Client disclosed,Approved submission,Scam signals,Posting age,Times reposted,Comp band,Furthest round,Outcome,Number of rounds,Interview hours,Take-home hours,First contact,Decision date,Interviewers,Panel observation,Possibly unlawful questions,Resume misstated,Rescheduled by company,Ghosted after final,Offer changes\n2026-11-13,Example Co,Security Engineer,Security engineering,LinkedIn,,,,3 days,0,$150k-$180k,Screener,Active,1,0.5,,2026-11-15,,1,,,,0,,\n";
+const STAGES = ["Screener","Hiring manager","Panel","Offer"];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pct = (a,b) => b ? Math.round(100*a/b) : 0;
+
+/* ---------- sample data (fictional) ---------- */
+// Fictional process and offer details for the sample search, keyed by company.
+const EXTRA = {
+  "Saltmarsh AI": {"Number of rounds":"6","Interview hours":"7.5","Take-home hours":"8","First contact":"2026-06-20","Decision date":"2026-08-21"},
+  "Pinecrest Bank": {"Interviewers":"5","Panel observation":"All men","Possibly unlawful questions":"Asked whether I have kids"},
+  "Cinder Labs": {"Resume misstated":"Said I claimed securing LLMs in 2019","Rescheduled by company":"3"},
+  "Copperleaf": {"Possibly unlawful questions":"Asked for my salary history"}
+};
+// Fictional layoff filings, used only with the sample search.
+const SAMPLE_WARN = {source:"Sample data (fictional)", range:"for the sample search only", companies:{"harbor & vale":["Harbor & Vale, Inc.",2,140,"2026-09-03",["San Francisco"]]}};
+const WARN = {"source": "California EDD WARN report", "range": "07/01/26 to 10/26/2026", "companies": {"mcdonald s": ["McDonald's Corporation", 1, 2, "2026-06-30", ["Los Angeles"]], "genentech": ["Genentech, Inc.", 1, 103, "2026-06-26", ["San Mateo"]], "athwal fds": ["Athwal FDS Corporation", 1, 35, "2026-06-30", ["San Bernardino"]], "blue diamond growers": ["Blue Diamond Growers", 3, 87, "2026-10-02", ["Sacramento"]], "kingdom animalia hourglass cosmetics": ["Kingdom Animalia, LLC (Hourglass Cosmetics)", 1, 7, "2026-07-02", ["Los Angeles"]], "dhl supply chain": ["DHL Supply Chain", 1, 33, "2026-07-02", ["Orange"]], "obsidian": ["Obsidian", 1, 52, "2026-07-06", ["Orange"]], "chevron": ["Chevron", 1, 180, "2026-07-01", ["Contra Costa"]], "leemah electronics": ["LeeMAH Electronics", 3, 479, "2026-09-11", ["San Mateo"]], "xpress delivery dsj9": ["Xpress Delivery LLC (DSJ9)", 1, 80, "2026-07-09", ["Alameda"]], "onpoint logistics": ["OnPoint Logistics LLC", 1, 96, "2026-07-09", ["San Francisco"]], "6th street center for youth youth for change": ["6th Street Center for Youth (Youth for Change)", 1, 6, "2026-07-10", ["Butte"]], "sentinel restaurant & hospitality": ["Sentinel Restaurant & Hospitality Group LLC", 1, 113, "2026-07-08", ["Orange"]], "vons companies": ["The Vons Companies Inc.", 1, 55, "2026-07-07", ["Los Angeles"]], "geodis": ["GEODIS", 1, 81, "2026-07-06", ["San Bernardino"]], "conduent": ["Conduent", 1, 51, "2026-06-26", ["Orange"]], "gmri": ["GMRI, Inc. dba Yard House", 1, 78, "2026-07-14", ["Orange"]], "gxo logistics worldwide": ["GXO Logistics Worldwide, LLC", 1, 46, "2026-07-10", ["San Bernardino"]], "udemy": ["Udemy, Inc.", 1, 28, "2026-07-14", ["San Francisco"]], "awcs cottonwood post acute rehab": ["AWCS, LLC (Cottonwood Post-Acute Rehab", 1, 158, "2026-07-13", ["Yolo"]], "coursera": ["Coursera, Inc.", 1, 31, "2026-07-14", ["Santa Clara"]], "elc beauty too faced cosmetics": ["ELC Beauty LLC (Too Faced Cosmetics, LLC)", 1, 67, "2026-07-14", ["Orange"]], "eargo": ["Eargo, Inc.", 1, 57, "2026-07-15", ["Santa Clara"]], "red lobster restaurants": ["Red Lobster Restaurants LLC", 1, 37, "2026-07-14", ["Santa Barbara"]], "phillips 66": ["Phillips 66", 1, 5, "2026-07-16", ["Los Angeles"]], "nbcuniversal media 1320": ["NBCUniversal Media, LLC - 1320", 1, 3, "2026-07-17", ["Los Angeles"]], "nbcuniversal media 1360": ["NBCUniversal Media, LLC - 1360", 1, 5, "2026-07-17", ["Los Angeles"]], "nbcuniversal media 1440": ["NBCUniversal Media, LLC -1440", 1, 87, "2026-07-17", ["Los Angeles"]], "nbcuniversal media 1460": ["NBCUniversal Media, LLC - 1460", 1, 55, "2026-07-17", ["Los Angeles"]], "aramark campus": ["Aramark Campus, LLC", 1, 94, "2026-07-16", ["San Bernardino"]], "monterey mushrooms": ["Monterey Mushrooms, LLC", 1, 253, "2026-07-17", ["Santa Clara"]], "ventura coastal": ["Ventura Coastal", 1, 71, "2026-07-15", ["Tulare"]], "magic leap": ["Magic Leap, Inc.", 2, 81, "2026-10-01", ["Santa Clara"]], "wind & sea restaurant": ["Wind & Sea Restaurant", 1, 198, "2026-07-14", ["Orange"]], "designerx pharmaceuticals": ["DesigneRX Pharmaceuticals, Inc.", 3, 38, "2026-10-21", ["Solano"]], "queen city staffing": ["Queen City Staffing", 1, 49, "2026-07-14", ["Sonoma"]], "new leaf community markets": ["New Leaf Community Markets, Inc.", 1, 61, "2026-07-21", ["Santa Clara"]], "pixar": ["Pixar", 1, 108, "2026-07-21", ["Alameda"]], "craftforce services 2330 circadian way": ["CraftForce Services, Inc. (2330 Circadian Way)", 1, 51, "2026-07-22", ["Sonoma"]], "craftforce services 2753 giffen avenue": ["CraftForce Services, Inc. (2753 Giffen Avenue)", 1, 7, "2026-07-22", ["Sonoma"]], "fortrex": ["Fortrex", 1, 91, "2026-07-23", ["Imperial"]], "uber technologies 1655 3rd street": ["Uber Technologies, Inc. (1655 3rd Street)", 2, 177, "2026-09-02", ["San Francisco"]], "uber technologies 1725 3rd st": ["Uber Technologies, Inc. (1725 3rd St.)", 1, 1, "2026-07-22", ["San Francisco"]], "uber technologies remote": ["Uber Technologies, Inc. (Remote)", 1, 14, "2026-07-22", ["San Francisco"]], "chick fil a & fig": ["Chick-fil-A & Fig", 1, 77, "2026-07-24", ["Los Angeles"]], "pd systems": ["PD Systems", 1, 81, "2026-07-27", ["Monterey"]], "intel robert noyce building": ["Intel Corporation - Robert Noyce Building", 2, 46, "2026-09-18", ["Santa Clara"]], "intel sc 9": ["Intel Corporation - SC-9", 2, 15, "2026-09-18", ["Santa Clara"]], "intel sc11": ["Intel Corporation - SC11", 1, 2, "2026-07-24", ["Santa Clara"]], "intel sc 12": ["Intel Corporation - SC-12", 2, 91, "2026-09-18", ["Santa Clara"]], "o brien s market": ["O'Brien's Market Inc.", 1, 50, "2026-07-27", ["Stanislaus"]], "o briens market": ["O'Briens Market Inc.", 1, 67, "2026-07-27", ["Stanislaus"]], "sodexo": ["Sodexo", 1, 164, "2026-07-24", ["Orange"]], "yerba mate san leandro": ["Yerba Mate Co., LLC - San Leandro", 1, 4, "2026-07-27", ["Alameda"]], "yerba mate bakersfield fresno": ["Yerba Mate Co., LLC - Bakersfield/Fresno", 1, 1, "2026-07-27", ["Kern"]], "yerba mate": ["Yerba Mate Co., LLC", 1, 6, "2026-07-27", ["Los Angeles"]], "yerba mate san fernando valley": ["Yerba Mate Co., LLC - San Fernando Valley", 1, 2, "2026-07-27", ["Los Angeles"]], "yerba mate santa ana": ["Yerba Mate Co., LLC - Santa Ana", 1, 1, "2026-07-27", ["Orange"]], "yerba mate riverside": ["Yerba Mate Co., LLC - Riverside", 1, 2, "2026-07-27", ["Riverside"]], "yerba mate sacramento": ["Yerba Mate Co., LLC - Sacramento", 1, 3, "2026-07-27", ["Sacramento"]], "yerba mate south san francisco": ["Yerba Mate Co., LLC - South San Francisco", 1, 1, "2026-07-27", ["San Mateo"]], "yerba mate santa barbara": ["Yerba Mate Co., LLC - Santa Barbara", 1, 1, "2026-07-27", ["Santa Barbara"]], "yerba mate santa maria": ["Yerba Mate Co., LLC - Santa Maria", 1, 1, "2026-07-27", ["Santa Barbara"]], "yerba mate santa cruz": ["Yerba Mate Co., LLC - Santa Cruz", 1, 1, "2026-07-27", ["Santa Cruz"]], "yerba mate petaluma": ["Yerba Mate Co., LLC - Petaluma", 1, 1, "2026-07-27", ["Sonoma"]], "yerba mate santa rosa": ["Yerba Mate Co., LLC - Santa Rosa", 1, 1, "2026-07-27", ["Sonoma"]], "servicenow": ["ServiceNow, Inc.", 4, 307, "2026-10-13", ["San Diego", "Santa Clara"]], "silgan containers": ["Silgan Containers", 3, 235, "2026-08-12", ["Stanislaus"]], "tencent america": ["Tencent America LLC", 1, 68, "2026-07-29", ["Orange"]], "federal express": ["Federal Express Corporation", 2, 116, "2026-07-29", ["Riverside", "San Bernardino"]], "sunnyside restaurant and lodge": ["Sunnyside Restaurant and Lodge", 1, 47, "2026-07-28", ["Placer"]], "international rescue committee": ["International Rescue Committee, Inc.", 2, 56, "2026-07-28", ["Sacramento", "Stanislaus"]], "wedriveu": ["WeDriveU, Inc.", 5, 63, "2026-07-31", ["Kern"]], "visa": ["Visa", 1, 320, "2026-07-31", ["San Mateo"]], "veritone": ["Veritone, Inc.", 1, 10, "2026-07-30", ["Orange"]], "yamaha motor finance u s a": ["Yamaha Motor Finance Corporation U.S.A.", 1, 61, "2026-07-31", ["Orange"]], "tpe acquisition 5116": ["TPE Acquisition, LLC - 5116", 1, 3, "2026-07-31", ["San Bernardino"]], "tpe acquisition 5026": ["TPE Acquisition, LLC - 5026", 1, 12, "2026-07-31", ["San Bernardino"]], "chime financial": ["Chime Financial, Inc.", 1, 135, "2026-07-31", ["San Francisco"]], "san francisco pretrial diversion project": ["San Francisco Pretrial Diversion Project, Inc.", 1, 82, "2026-07-30", ["San Francisco"]], "nutanix": ["Nutanix, Inc.", 1, 65, "2026-08-04", ["Santa Clara"]], "eclipse advantage": ["Eclipse Advantage, LLC", 1, 18, "2026-08-05", ["San Bernardino"]], "salesforce": ["Salesforce, Inc.", 1, 74, "2026-08-05", ["San Francisco"]], "laz parking california 9610 sky way": ["LAZ Parking California (9610 Sky Way)", 1, 139, "2026-08-06", ["Los Angeles"]], "laz parking california 5455 west 111th street": ["LAZ Parking California (5455 West 111th Street)", 1, 58, "2026-08-06", ["Los Angeles"]], "laz parking california 5251 west 98th street": ["LAZ Parking California (5251 West 98th Street)", 1, 50, "2026-08-06", ["Los Angeles"]], "staples fulfillment center": ["Staples Fulfillment Center", 1, 109, "2026-08-05", ["Los Angeles"]], "essendant": ["Essendant Co.", 2, 103, "2026-08-03", ["Riverside", "Sacramento"]], "renteria vineyard management": ["Renteria Vineyard Management", 1, 91, "2026-08-07", ["Napa"]], "g3 enterprises": ["G3 Enterprises", 1, 66, "2026-08-07", ["Stanislaus"]], "bumble bee foods": ["Bumble Bee Foods, LLC", 1, 197, "2026-08-11", ["Los Angeles"]], "zoll medical": ["ZOLL Medical Corporation", 1, 78, "2026-08-11", ["Riverside"]], "sharp metropolitan medical campus sharp memorial hospital": ["Sharp Metropolitan Medical Campus  - Sharp Memorial Hospital", 1, 20, "2026-08-11", ["San Diego"]], "sharp metropolitan medical campus sharp mesa vista": ["Sharp Metropolitan Medical Campus - Sharp Mesa Vista", 1, 134, "2026-08-11", ["San Diego"]], "sharp metropolitan medical sharp mcdonald center": ["Sharp Metropolitan Medical Group - Sharp McDonald Center", 1, 2, "2026-08-11", ["San Diego"]], "sharp metropolitan medical campus sharp mary birch hospital": ["Sharp Metropolitan Medical Campus - Sharp Mary Birch Hospital", 1, 7, "2026-08-11", ["San Diego"]], "sharp metropolitan medical campus sharp outpatient pavilion": ["Sharp Metropolitan Medical Campus - Sharp Outpatient Pavilion", 1, 5, "2026-08-11", ["San Diego"]], "adventist health glendale": ["Adventist Health Glendale", 1, 7, "2026-08-11", ["Los Angeles"]], "ebaldc 100 9th street": ["EBALDC (100 9th Street)", 1, 4, "2026-08-11", ["Alameda"]], "ebaldc 121 e 12th street": ["EBALDC (121 E 12th Street)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 1448 10th street": ["EBALDC (1448 10th Street)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 1825 san pablo ave suite 200": ["EBALDC (1825 San Pablo Ave., Suite 200)", 1, 20, "2026-08-11", ["Alameda"]], "ebaldc 188 11th street": ["EBALDC (188 11th Street)", 1, 4, "2026-08-11", ["Alameda"]], "ebaldc 1935 seminary ave": ["EBALDC (1935 Seminary Ave)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 1955 san pablo ave": ["EBALDC (1955 San Pablo Ave)", 1, 9, "2026-08-11", ["Alameda"]], "ebaldc 2201 brush st": ["EBALDC (2201 Brush St.)", 1, 5, "2026-08-11", ["Alameda"]], "ebaldc 2555 international blvd": ["EBALDC (2555 International BLVD)", 1, 5, "2026-08-11", ["Alameda"]], "ebaldc 283 13th street": ["EBALDC (283 13th Street)", 1, 4, "2026-08-11", ["Alameda"]], "ebaldc 2946 international blvd": ["EBALDC (2946 International BLVD)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 3501 san pablo ave": ["EBALDC (3501 San Pablo Ave)", 1, 9, "2026-08-11", ["Alameda"]], "ebaldc 3850 san pablo ave": ["EBALDC (3850 San Pablo Ave)", 1, 1, "2026-08-11", ["Alameda"]], "ebaldc 700 willow street": ["EBALDC (700 Willow Street)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 801 pine street": ["EBALDC (801 Pine Street)", 1, 4, "2026-08-11", ["Alameda"]], "ebaldc 918 clay street": ["EBALDC (918 Clay Street)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 989 brush street": ["EBALDC (989 Brush Street)", 1, 2, "2026-08-11", ["Alameda"]], "ebaldc 120 macdonald ave": ["EBALDC (120 Macdonald Ave)", 1, 1, "2026-08-11", ["Contra Costa"]], "ebaldc 907 lake street": ["EBALDC (907 Lake Street)", 1, 2, "2026-08-11", ["Contra Costa"]], "universal city studios productions lllp": ["Universal City Studios Productions LLLP", 1, 14, "2026-08-13", ["Los Angeles"]], "netflix": ["Netflix, Inc.", 3, 553, "2026-10-16", ["Los Angeles", "Santa Clara"]], "roskam baking": ["Roskam Baking Company dba Organic Milling", 1, 115, "2026-08-17", ["Los Angeles"]], "corteva agriscience": ["Corteva Agriscience LLC", 2, 4, "2026-09-28", ["Contra Costa"]], "stockton truss": ["Stockton Truss LLC", 1, 65, "2026-08-18", ["San Joaquin"]], "volume services sodexo": ["Volume Services, Inc. (Sodexo)", 1, 93, "2026-08-17", ["Ventura"]], "stone brewing executive place": ["Stone Brewing Co., LLC - Executive Place", 1, 6, "2026-08-19", ["San Diego"]], "stone brewing harmony grove": ["Stone Brewing Co., LLC - Harmony Grove", 1, 2, "2026-08-19", ["San Diego"]], "stone brewing citracado parkway": ["Stone Brewing CO., LLC - Citracado Parkway", 1, 50, "2026-08-19", ["San Diego"]], "flying food": ["Flying Food Group, LLC", 1, 72, "2026-08-14", ["San Mateo"]], "haas automation": ["Haas Automation, Inc.", 2, 147, "2026-10-07", ["Ventura"]], "blue shield of california": ["Blue Shield of California", 6, 47, "2026-08-21", ["Alameda", "Los Angeles", "Sacramento"]], "blue shield of california building c": ["Blue Shield of California (Building C)", 1, 1, "2026-08-21", ["El Dorado"]], "blue shield of california building b": ["Blue Shield of California (Building B)", 1, 12, "2026-08-21", ["El Dorado"]], "cellares": ["Cellares Corporation", 1, 100, "2026-08-21", ["San Mateo"]], "apple cupertino": ["Apple, Inc. - Cupertino", 1, 79, "2026-08-20", ["Santa Clara"]], "apple sunnyvale": ["Apple, Inc. - Sunnyvale", 1, 28, "2026-08-20", ["Santa Clara"]], "apple maude ave": ["Apple, Inc. - Maude Ave.", 1, 40, "2026-08-20", ["Santa Clara"]], "jabil": ["Jabil Inc.", 1, 382, "2026-08-20", ["Santa Clara"]], "bfg supply": ["BFG Supply Co., LLC", 2, 39, "2026-08-24", ["San Bernardino", "Yolo"]], "levine management": ["Levine Management Group, Inc.", 1, 72, "2026-08-18", ["Los Angeles"]], "john muir physician network 5860 owens drive": ["John Muir Physician Network - 5860 Owens Drive", 1, 1, "2026-08-27", ["Alameda"]], "john muir health treat blvd": ["John Muir Health - Treat Blvd.", 1, 23, "2026-08-27", ["Contra Costa"]], "john muir health 1450 treat blvd": ["John Muir Health - 1450 Treat Blvd.", 1, 4, "2026-08-27", ["Contra Costa"]], "john muir health 1601 ygnacio valley road": ["John Muir Health - 1601 Ygnacio Valley Road", 1, 15, "2026-08-27", ["Contra Costa"]], "john muir health 177 la casa via": ["John Muir Health - 177 La Casa Via", 1, 2, "2026-08-27", ["Contra Costa"]], "john muir health 2540 east street": ["John Muir Health - 2540 East Street", 2, 18, "2026-08-27", ["Contra Costa"]], "john muir health 2740 grant street": ["John Muir Health - 2740 Grant Street", 1, 2, "2026-08-27", ["Contra Costa"]], "john muir health 3480 buskirk ave": ["John Muir Health - 3480 Buskirk Ave.", 1, 1, "2026-08-27", ["Contra Costa"]], "john muir health 5003 commercial circle": ["John Muir Health - 5003 Commercial Circle", 1, 2, "2026-08-27", ["Contra Costa"]], "john muir physician network 1450 treat blvd": ["John Muir Physician Network - 1450 Treat Blvd.", 1, 6, "2026-08-27", ["Contra Costa"]], "john muir physician network 1601 ygnacio valley road": ["John Muir Physician Network - 1601 Ygnacio Valley Road", 1, 1, "2026-08-27", ["Contra Costa"]], "john muir physician network 2700 grant street": ["John Muir Physician Network - 2700 Grant Street", 1, 1, "2026-08-27", ["Contra Costa"]], "john muir behavioral health 2740 grant street": ["John Muir Behavioral Health - 2740 Grant Street", 1, 1, "2026-08-27", ["Contra Costa"]], "john muir health 2700 grant street": ["John Muir Health - 2700 Grant Street", 1, 1, "2026-08-27", ["Contra Costa"]], "rtx": ["RTX", 2, 8, "2026-09-22", ["Los Angeles"]], "raley s store no 336": ["Raley's Store No. 336", 1, 51, "2026-08-27", ["Contra Costa"]], "stanford health care 1830 embarcadero rd": ["Stanford Health Care - 1830 Embarcadero Rd.", 1, 79, "2026-08-28", ["Santa Clara"]], "stanford health care 1840 embarcadero rd": ["Stanford Health Care - 1840 Embarcadero Rd.", 1, 16, "2026-08-28", ["Santa Clara"]], "power safety service": ["Power Safety Service, LLC", 1, 189, "2026-08-28", ["San Joaquin"]], "telecare brighter tomorrow program 162": ["Telecare Corporation - Brighter Tomorrow, Program 162", 1, 23, "2026-08-28", ["Ventura"]], "telecare house of transitions": ["Telecare Corporation - House of Transitions", 1, 16, "2026-08-28", ["Ventura"]], "telecare recovery starship": ["Telecare Corporation - Recovery Starship", 1, 16, "2026-08-28", ["Ventura"]], "telecare stonehedge": ["Telecare Corporation - Stonehedge", 1, 13, "2026-08-28", ["Ventura"]], "astrion": ["Astrion", 1, 28, "2026-08-28", ["Kern"]], "amazon sjc13": ["Amazon - SJC13", 1, 70, "2026-08-28", ["Santa Clara"]], "synopsys": ["Synopsys, Inc.", 1, 128, "2026-08-31", ["Santa Clara"]], "amazon sf019": ["Amazon - SF019", 1, 78, "2026-08-28", ["San Francisco"]], "24hr homecare": ["24Hr Homecare, LLC", 2, 1613, "2026-10-01", ["Los Angeles"]], "clarmil manufacturing": ["Clarmil Manufacturing Corporation", 1, 108, "2026-08-28", ["Alameda"]], "arsenal biosciences": ["Arsenal Biosciences, Inc.", 1, 58, "2026-08-31", ["San Mateo"]], "paypal": ["PayPal", 1, 251, "2026-08-31", ["Santa Clara"]], "renewal by andersen": ["Renewal by Andersen LLC", 3, 284, "2026-09-01", ["Los Angeles", "Orange"]], "foundation for california community colleges": ["Foundation for California Community Colleges", 1, 178, "2026-09-02", ["Sacramento"]], "ventana grill": ["Ventana Grill", 1, 82, "2026-09-02", ["San Luis Obispo"]], "ovg hospitality": ["OVG Hospitality", 1, 128, "2026-09-03", ["Ventura"]], "homeless health care los angeles crocker street": ["Homeless Health Care Los Angeles - Crocker Street", 1, 117, "2026-09-02", ["Los Angeles"]], "homeless health care los angeles maple ave": ["Homeless Health Care Los Angeles - Maple Ave.", 1, 16, "2026-09-02", ["Los Angeles"]], "homeless health care los angeles 2nd street": ["Homeless Health Care Los Angeles - 2nd Street", 1, 1, "2026-09-02", ["Los Angeles"]], "grain craft": ["Grain Craft, LLC", 1, 3, "2026-09-01", ["San Bernardino"]], "sontek xylem": ["SonTek (Xylem, Inc.)", 1, 36, "2026-09-04", ["San Diego"]], "eggo": ["Eggo Company dba Kellanova", 1, 112, "2026-09-04", ["Santa Clara"]], "ruiz food products": ["Ruiz Food Products, Inc.", 1, 176, "2026-09-04", ["Tulare"]], "shell catalyst & technologies": ["Shell Catalyst & Technologies", 1, 64, "2026-09-09", ["Contra Costa"]], "trailer park": ["Trailer Park, Inc.", 1, 119, "2026-08-27", ["Los Angeles"]], "university of southern california 1042 downey way": ["University of Southern California (1042 Downey Way)", 1, 7, "2026-09-09", ["Los Angeles"]], "university of southern california 1149 s hill street": ["University of Southern California (1149 S. Hill Street)", 1, 1, "2026-09-09", ["Los Angeles"]], "university of southern california 1150 s olive street": ["University of Southern California (1150 S. Olive Street)", 1, 5, "2026-09-09", ["Los Angeles"]], "university of southern california 12015 e waterfront dr": ["University of Southern California (12015 E Waterfront Dr.)", 1, 8, "2026-09-09", ["Los Angeles"]], "university of southern california 3649 mcclintock ave": ["University of Southern California (3649 McClintock Ave.)", 1, 21, "2026-09-09", ["Los Angeles"]], "university of southern california 3740 mcclintock ave": ["University of Southern California (3740 McClintock Ave)", 1, 2, "2026-09-09", ["Los Angeles"]], "university of southern california 4676 admiralty way": ["University of Southern California (4676 Admiralty Way)", 1, 15, "2026-09-09", ["Los Angeles"]], "university of southern california 746 w adams blvd": ["University of Southern California (746 W Adams Blvd.)", 1, 1, "2026-09-09", ["Los Angeles"]], "university of southern california 854 downey way": ["University of Southern California (854 Downey Way)", 1, 1, "2026-09-09", ["Los Angeles"]], "university of southern california 941 bloom walk": ["University of Southern California (941 Bloom Walk)", 1, 4, "2026-09-09", ["Los Angeles"]], "sapporo u s a 1999 citracado parkway": ["Sapporo U.S.A. (1999 Citracado Parkway)", 1, 200, "2026-09-09", ["San Diego"]], "sapporo u s a 2865 executive place": ["Sapporo U.S.A. (2865 Executive Place)", 1, 6, "2026-09-09", ["San Diego"]], "sapporo u s a 2005 harmony grove rd": ["Sapporo U.S.A. (2005 Harmony Grove Rd)", 1, 6, "2026-09-09", ["San Diego"]], "fuji food products": ["Fuji Food Products, Inc.", 1, 35, "2026-09-10", ["Los Angeles"]], "uber technologies 200 mathilda place": ["Uber Technologies, Inc. - 200 Mathilda Place", 1, 94, "2026-09-02", ["Santa Clara"]], "uber technologies 190 mathilda place": ["Uber technologies, Inc. - 190 Mathilda Place", 1, 43, "2026-09-02", ["Santa Clara"]], "oracle pleasanton campus pleasanton campus": ["Oracle Pleasanton Campus (Pleasanton Campus)", 1, 63, "2026-09-14", ["Alameda"]], "oracle america": ["Oracle America, Inc.", 2, 378, "2026-09-14", ["San Mateo", "Santa Clara"]], "uber technologies 1725 3rd street": ["Uber Technologies, Inc. 1725 3rd Street", 1, 102, "2026-09-02", ["San Francisco"]], "full steam staffing 2121 boeing way": ["Full Steam Staffing (2121 Boeing Way)", 1, 91, "2026-09-15", ["San Joaquin"]], "full steam staffing 4239 pock lane": ["Full Steam Staffing (4239 Pock Lane)", 1, 19, "2026-09-15", ["San Joaquin"]], "pathways community services": ["Pathways Community Services dba Clarvida", 2, 67, "2026-09-01", ["Orange"]], "maya cinemas fresno 16": ["Maya Cinemas Fresno 16", 1, 86, "2026-09-16", ["Fresno"]], "levine management 822 srobertson": ["Levine Management Group, Inc. - 822 SRobertson", 1, 17, "2026-08-18", ["Los Angeles"]], "levine management groups candlewood": ["Levine Management Groups, Inc. - Candlewood", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management groups san dimas": ["Levine Management Groups, Inc. - San Dimas", 1, 3, "2026-08-18", ["Los Angeles"]], "levine management groups ratner st": ["Levine Management Groups, Inc. - Ratner St.", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups 95th street": ["Levine Management Groups, Inc. 95th Street", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management groups towne avenue": ["Levine Management Groups, Inc. - Towne Avenue", 1, 4, "2026-08-18", ["Los Angeles"]], "levine management groups normandie ave": ["Levine management Groups, Inc. - Normandie Ave", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management rural dr": ["Levine Management Group, Inc. - Rural Dr.", 1, 4, "2026-08-18", ["Los Angeles"]], "levine management james m wood blvd": ["Levine Management Group, Inc. - James M. Wood Blvd", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management gale ave": ["Levine Management Group, Inc. - Gale Ave.", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management groups potrero grande": ["Levine Management Groups, Inc. - Potrero Grande", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups mesa st": ["Levine Management Groups, Inc. - Mesa St.", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management groups 900 906 crenshaw blvd": ["Levine Management Groups, Inc. - 900-906 Crenshaw Blvd", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups kingsley dr": ["Levine Management Groups. Inc. - Kingsley Dr.", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups beachwood dr": ["Levine Management Groups, Inc. - Beachwood Dr.", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups manhattan pl": ["Levine Management Groups, Inc. - Manhattan Pl", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups valley blvd": ["Levine Management Groups, Inc. - Valley Blvd.", 1, 4, "2026-08-18", ["Los Angeles"]], "levine management groups 1053 s new hampshire ave": ["Levine Management Groups, Inc. - 1053 S. New Hampshire Ave.-", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups 1057 s new hampshire ave": ["Levine Management Groups, Inc. - 1057 S, New Hampshire Ave", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups 980 palm ave": ["Levine Management Groups, Inc. - 980 Palm Ave.", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management groups arrow highway": ["Levine Management Groups, Inc. - Arrow Highway", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups glendale blvd": ["Levine Management Groups, Inc. - Glendale Blvd", 1, 1, "2026-08-18", ["Los Angeles"]], "leveine management groups 415 s oleander ave": ["Leveine Management Groups - 415 S. Oleander Ave.", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups 425 s oleander ave": ["Levine Management Groups, Inc. - 425 S. Oleander Ave.", 1, 3, "2026-08-18", ["Los Angeles"]], "levine management groups canada blvd": ["Levine Management Groups, Inc. - Canada Blvd.", 1, 1, "2026-08-18", ["Los Angeles"]], "levine management groups sunset pl": ["Levine Management Groups, Inc. - Sunset Pl.", 1, 2, "2026-08-18", ["Los Angeles"]], "levine management groups cypress road": ["Levine Management Groups, Inc. - Cypress Road", 1, 2, "2026-08-18", ["Ventura"]], "levine management groups ponderosa dr": ["Levine Management Groups, Inc. - Ponderosa Dr.", 1, 2, "2026-08-18", ["Ventura"]], "levine management groups carmelita ct": ["Levine Management Groups, Inc. - Carmelita Ct.", 1, 1, "2026-08-18", ["Ventura"]], "amy s kitchen": ["Amy's Kitchen, LLC", 1, 200, "2026-09-17", ["Sonoma"]], "safeway stoneridge mall road": ["Safeway, Inc. - Stoneridge Mall Road", 1, 4, "2026-09-17", ["Alameda"]], "safeway dublin canyon road": ["Safeway, Inc. - Dublin Canyon Road", 1, 46, "2026-09-17", ["Alameda"]], "intel sc 11": ["Intel Corporation - SC-11", 1, 1, "2026-09-18", ["Santa Clara"]], "ips nationwide": ["IPS Nationwide, Inc.", 2, 262, "2026-09-18", ["Alameda", "Orange"]], "kaiser 1800 harrison st": ["Kaiser (1800 Harrison St.)", 1, 1, "2026-09-21", ["Alameda"]], "kaiser one kaiser plaza": ["Kaiser (One Kaiser Plaza)", 1, 11, "2026-09-21", ["Alameda"]], "kaiser": ["Kaiser", 5, 28, "2026-09-21", ["Alameda", "Los Angeles", "Orange"]], "kaiser 393 e walnut st": ["Kaiser (393 E. Walnut St.)", 1, 2, "2026-09-21", ["Los Angeles"]], "kaiser 74 n pasadena ave": ["Kaiser (74 N. Pasadena Ave.)", 1, 1, "2026-09-21", ["Los Angeles"]], "kaiser 75n fair oaks ave": ["Kaiser (75N. Fair Oaks Ave.)", 1, 3, "2026-09-21", ["Los Angeles"]], "kaiser 99 s oakland ave": ["Kaiser (99 S. Oakland Ave.)", 1, 20, "2026-09-21", ["Los Angeles"]], "kaiser 1830 california ave": ["Kaiser (1830 California Ave.)", 1, 2, "2026-09-21", ["Riverside"]], "kaiser 1840 california ave": ["Kaiser (1840 California Ave.)", 1, 4, "2026-09-21", ["Riverside"]], "kaiser 17140 bernardo center dr": ["Kaiser (17140 Bernardo Center Dr.)", 1, 1, "2026-09-21", ["San Diego"]], "kaiser 3840 murphy canyon rd": ["Kaiser (3840 Murphy Canyon Rd.)", 1, 2, "2026-09-21", ["San Diego"]], "kaiser 8954 rio san diego dr": ["Kaiser (8954 Rio San Diego Dr.)", 1, 72, "2026-09-21", ["San Diego"]], "capstone delivery": ["Capstone Delivery Inc.", 1, 106, "2026-09-23", ["Los Angeles"]], "quixote studio services north valley campus a": ["Quixote Studio Services - North Valley Campus A", 1, 24, "2026-09-15", ["Los Angeles"]], "quixote studio services north valley": ["Quixote Studio Services - North Valley", 1, 29, "2026-09-15", ["Los Angeles"]], "quixote studio services sylmar south": ["Quixote Studio Services - Sylmar South", 1, 3, "2026-09-15", ["Los Angeles"]], "quixote studio services sylmar north": ["Quixote Studio Services - Sylmar North", 1, 1, "2026-09-15", ["Los Angeles"]], "key energy services bakersfield location": ["Key Energy Services, LLC - Bakersfield Location", 1, 53, "2026-09-23", ["Kern"]], "randstad inhouse services dreyer s": ["Randstad Inhouse Services, LLC (Dreyer's)", 2, 516, "2026-09-24", ["Kern", "Tulare"]], "key energy services ventura location": ["Key Energy Services, LLC - Ventura Location", 1, 4, "2026-09-23", ["Ventura"]], "city of hope": ["City of Hope", 1, 73, "2026-09-23", ["Los Angeles"]], "sac health 1003 east brier drive": ["SAC Health (1003 East Brier Drive)", 1, 42, "2026-09-22", ["San Bernardino"]], "sac health 250 south g st": ["SAC Health (250 South G St.)", 1, 9, "2026-09-22", ["San Bernardino"]], "dreyer s grand ice cream": ["Dreyer's Grand Ice Cream", 5, 1985, "2026-10-20", ["Kern", "Tulare"]], "city national bank flower street": ["City National Bank - Flower Street", 1, 4, "2026-09-24", ["Los Angeles"]], "city national bank grand ave": ["City National Bank - Grand Ave.", 1, 15, "2026-09-24", ["Los Angeles"]], "covenant aviation security": ["Covenant Aviation Security, LLC", 1, 1279, "2026-09-28", ["San Francisco"]], "biomarin pharmaceutical": ["BioMarin Pharmaceutical Inc.", 1, 117, "2026-09-24", ["Marin"]], "workday": ["Workday Inc.", 1, 142, "2026-09-29", ["Alameda"]], "constellis 1060 n eastern ave": ["Constellis, LLC (1060 N Eastern Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 1104 n eastern ave": ["Constellis, LLC (1104 N. Eastern Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 11515 s colima rd": ["Constellis, LLC (11515 S. Colima Rd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 11700 s alameda st": ["Constellis, LLC (11700 S. Alameda St.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 11703 s alameda st": ["Constellis, LLC (11703 S. Alameda St.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 11703 w alameda st": ["Constellis, LLC (11703 W. Alameda St.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 12335 civic center dr": ["Constellis, LLC (12335 Civic Center Dr.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 1310 w imperial hwy": ["Constellis, LLC (1310 W Imperial Hwy)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 13483 fiji way": ["Constellis, LLC (13483 Fiji Way)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 1445 mckinley ave": ["Constellis, LLC (1445 McKinley Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 150 n hudson ave": ["Constellis, LLC (150 N Hudson Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 21356 s avalon blvd": ["Constellis, LLC (21356 S. Avalon Blvd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 21695 valley blvd": ["Constellis, LLC (21695 Valley Blvd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 26123 s narbonne ave": ["Constellis, LLC (26123 S. Narbonne Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 26201 golden valley rd": ["Constellis, LLC (26201 Golden Valley Rd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 270 s walnut ave": ["Constellis, LLC (270 S. Walnut Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 270 w walnut ave": ["Constellis, LLC (270 W. Walnut Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 27050 agoura rd": ["Constellis, LLC (27050 Agoura Rd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 29380 old road": ["Constellis, LLC (29380 The Old Road)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 441 bauchet st": ["Constellis, LLC (441 Bauchet St.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 4554 n briggs ave": ["Constellis, LLC (4554 N. Briggs Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 501 w lancaster blvd": ["Constellis, LLC (501 W. Lancaster Blvd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 5019 e 3rd st": ["Constellis, LLC (5019 E 3rd St.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 5130 n clark ave": ["Constellis, LLC (5130 N. Clark Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 6631 s passons ave": ["Constellis, LLC (6631 S Passons Ave.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 750 e ave q": ["Constellis, LLC (750 E Ave Q)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 780 n san vicenta blvd": ["Constellis, LLC (780 N. San Vicenta Blvd.)", 1, 5, "2026-09-29", ["Los Angeles"]], "constellis 8838 e las tunas dr": ["Constellis, LLC (8838 E. Las Tunas Dr.)", 1, 5, "2026-09-29", ["Los Angeles"]], "dlvr a": ["DLVR (A Corp)", 1, 60, "2026-09-30", ["Los Angeles"]], "mckinley paper and packaging": ["McKinley Paper and Packaging Company", 1, 45, "2026-09-28", ["Los Angeles"]], "becton dickinson and bd": ["Becton, Dickinson and Company (BD)", 1, 85, "2026-09-24", ["San Diego"]], "trufusion west hollywood": ["TruFusion West Hollywood LLC", 1, 92, "2026-10-01", ["Los Angeles"]], "monroe operations": ["Monroe Operations, LLC, dba Newport Healthcare - Pimlico", 5, 40, "2026-09-30", ["Ventura"]], "kaiser foundation hospitals and kaiser foundation health plan": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc.", 8, 15, "2026-10-19", ["Alameda", "Marin", "Riverside"]], "kaiser foundation hospitals and kaiser foundation health plan 74 n pasadena ave": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc. (74 N. Pasadena Ave.)", 1, 1, "2026-10-05", ["Los Angeles"]], "kaiser foundation hospitals and kaiser foundation health plan 393 e walnut st": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc. (393 E. Walnut St.)", 1, 1, "2026-10-05", ["Los Angeles"]], "amf bowling centers castle park": ["AMF Bowling Centers, Inc. Castle Park", 1, 130, "2026-10-05", ["Riverside"]], "caribou biosciences": ["Caribou Biosciences, Inc.", 1, 87, "2026-10-06", ["Alameda"]], "cayuga home for children": ["Cayuga Home for Children", 1, 12, "2026-10-05", ["Los Angeles"]], "neogen care home health agency": ["Neogen Care Home Health Agency", 1, 148, "2026-09-30", ["Los Angeles"]], "ods technologies and betfair interactive": ["ODS Technologies LP and Betfair Interactive US LLC", 1, 2, "2026-10-01", ["Los Angeles"]], "beachbody": ["Beachbody, LLC", 1, 80, "2026-10-06", ["Los Angeles"]], "jacuzzi": ["Jacuzzi", 1, 42, "2026-10-08", ["San Bernardino"]], "sapporo u s a executive place": ["Sapporo U.S.A. - Executive Place", 1, 1, "2026-10-09", ["San Diego"]], "sapporo u s a citracado parkway": ["Sapporo U.S.A - Citracado Parkway", 1, 2, "2026-10-09", ["San Diego"]], "phillips 66 wilmington": ["Phillips 66 - Wilmington", 1, 5, "2026-10-09", ["Los Angeles"]], "phillips 66 carson": ["Phillips 66 - Carson", 1, 3, "2026-10-09", ["Los Angeles"]], "neil jones food": ["The Neil Jones Food Company dba Tomatek", 1, 116, "2026-10-14", ["Fresno"]], "menzies aviation": ["Menzies Aviation", 1, 137, "2026-10-05", ["Los Angeles"]], "fender musical instruments": ["Fender Musical Instruments Corporation", 1, 533, "2026-10-15", ["Riverside"]], "myers power products": ["Myers Power Products, Inc.", 1, 206, "2026-10-09", ["San Bernardino"]], "formagrid": ["Formagrid Inc. dba Airtable", 1, 190, "2026-10-15", ["San Francisco"]], "silverado senior living managment": ["Silverado Senior Living Managment Inc.", 1, 7, "2026-10-14", ["Los Angeles"]], "baloian farms": ["Baloian Farms", 1, 106, "2026-10-01", ["Fresno"]], "kaiser foundation hospitals and kaiser foundation health plan 1800 harrison st": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc. (1800 Harrison St.)", 1, 1, "2026-10-19", ["Alameda"]], "kaiser foundation hospitals and kaiser foundation health plan one kaiser plaza": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc. (One Kaiser Plaza)", 1, 5, "2026-10-19", ["Alameda"]], "kaiser foundation hospitals and kaiser foundation health plan 75 n fair oaks ave": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc. (75 N. Fair Oaks Ave.)", 1, 1, "2026-10-19", ["Los Angeles"]], "kaiser foundation hospitals and kaiser foundation health plan 99 s oakland ave": ["Kaiser Foundation Hospitals and Kaiser Foundation Health Plan, Inc. (99 S. Oakland Ave.)", 1, 1, "2026-10-19", ["Los Angeles"]], "tree service unlimited": ["Tree Service Unlimited Inc.", 1, 137, "2026-10-13", ["El Dorado"]], "safeway": ["Safeway, Inc.", 1, 92, "2026-10-20", ["Contra Costa"]], "randstad dreyer s grand ice cream": ["Randstad (Dreyer's Grand Ice Cream)", 1, 91, "2026-10-20", ["Tulare"]], "ebay": ["eBay Inc.", 1, 229, "2026-10-21", ["Santa Clara"]], "georg fischer signet": ["Georg Fischer Signet LLC", 1, 107, "2026-10-22", ["Los Angeles"]], "intel": ["Intel Corporation", 1, 67, "2026-10-22", ["Sacramento"]], "conduent state & local solutions": ["Conduent State & Local Solutions, Inc.", 1, 64, "2026-10-23", ["San Francisco"]], "madrona": ["The Madrona", 1, 77, "2026-10-23", ["Sonoma"]], "everidge": ["Everidge Inc.", 1, 90, "2026-10-25", ["San Bernardino"]], "tawa": ["Tawa, Inc. dba 99 Ranch Market", 1, 49, "2026-10-26", ["San Bernardino"]]}};
+let warnData = WARN;
+
+function sampleRows(){
+  let seed = 11; const r = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  // [company, role family, titles, posting age days, reposts, pay band listed, silent]
+  const cos = [
+    ["Larkspur Health","GRC",["GRC Analyst"],12,0,true],["Northwind Ledger","GRC",["Compliance Manager","GRC Lead"],20,0,true],
+    ["Quillmark","GRC",["GRC Analyst"],126,5,true],["Harbor & Vale","Security engineering",["Security Engineer"],9,0,true],
+    ["Brightline Ops","IT operations",["IT Ops Lead"],15,0,true],["Cinder Labs","Security engineering",["Detection Engineer"],6,0,true],
+    ["Tessellate","GRC",["Risk Analyst"],25,1,true],["Bluefin Pay","Security engineering",["Security Engineer","AppSec Engineer"],18,0,true],
+    ["Orchard Systems","IT operations",["Systems Engineer"],30,0,true],["Meridian Grid","GRC",["Compliance Manager"],40,0,true],
+    ["Fernway","Security engineering",["Cloud Security Engineer"],11,0,true],["Copperleaf","GRC",["GRC Analyst"],22,0,true],
+    ["Saltmarsh AI","Security engineering",["Security Engineer"],119,1,true],["Pinecrest Bank","GRC",["Compliance Manager"],35,4,false],
+    ["Lumen Retail","IT operations",["IT Ops Lead"],28,0,false,true],["Stillwater Cloud","Security engineering",["Detection Engineer"],14,0,true]
+  ];
+  const rate = {"GRC":0.08,"Security engineering":0.32,"IT operations":0.16};
+  const perWeek = [14,17,12,16,19,13,15,11,6,4,3,5,4,7,5,6,4];
+  const rows = []; const start = new Date("2026-06-01");
+  perWeek.forEach((n,week)=>{ for(let j=0;j<n;j++){
+    const d = new Date(start.getTime() + (week*7 + Math.floor(r()*5))*864e5);
+    const c = cos[Math.floor(r()*cos.length)];
+    let round="", outcome="No response";
+    const x = r();
+    if(!c[6] && x < rate[c[1]]){
+      round="Screener"; outcome = r()<.45 ? "Rejected" : "Active";
+      if(r()<.65){ round="Hiring manager"; outcome = r()<.45 ? "Rejected":"Active";
+        if(r()<.6){ round="Panel"; outcome = r()<.75 ? "Rejected":"Active";
+          if(r()<.25){ round="Offer"; outcome="Offer"; } } }
+    } else if (!c[6] && x < rate[c[1]]+0.24) outcome="Rejected";
+    const age = c[3] + Math.floor(r()*6);
+    rows.push({
+      "Date applied": d.toISOString().slice(0,10), Company: c[0], "Role title": c[2][Math.floor(r()*c[2].length)],
+      "Role family": c[1], "Posting age": age>13 ? Math.round(age/7)+" weeks" : age+" days",
+      "Times reposted": String(c[4]), "Comp band": c[5] ? "$140k-$185k" : "",
+      "Furthest round": round, Outcome: outcome, Source: "LinkedIn", ...(EXTRA[c[0]] || {})
+    });
+  }});
+  // Ghosted only on the application that reached the panel.
+  const ghost = rows.filter(x=>x.Company==="Cinder Labs" && x["Furthest round"]==="Panel").pop() || rows.find(x=>x.Company==="Cinder Labs" && x["Furthest round"]);
+  if(ghost){ ghost["Ghosted after final"] = "Yes"; ghost.Outcome = "No response"; }
+  // Same role shopped by three agencies, client never named.
+  const agencies = ["Apex Search","Kinetic Talent","Bridgewell Recruiting"];
+  rows.filter(x=>x.Company==="Northwind Ledger").forEach((x,i)=>{ x.Source = agencies[i%3]; x["Client disclosed"] = "No"; if(i%3===1) x["Approved submission"] = "No"; });
+  // A recruiter message with scam patterns.
+  rows.push({"Date applied":"2026-08-19",Company:"Unnamed client via Vantage Talent","Role title":"Remote Security Analyst","Role family":"GRC",
+    "Posting age":"2 days","Times reposted":"0","Comp band":"$200k-$260k","Furthest round":"",Outcome:"Withdrawn",Source:"Vantage Talent",
+    "Client disclosed":"No","Scam signals":"Telegram only; asked for SSN and bank details before an interview"});
+  // The talk's ending: at least one of those became an offer.
+  const panel = rows.filter(r=>r["Furthest round"]==="Panel" && r.Outcome==="Active").pop();
+  if(panel){ panel["Furthest round"]="Offer"; panel.Outcome="Offer"; panel["Offer changes"]="Title down-levelled from Senior; 48-hour deadline"; }
+  return rows;
+}
+
+/* ---------- CSV ---------- */
+function parseCSV(text){
+  const out=[]; let row=[], cell="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cell); out.push(row); row=[]; cell=""; }
+    else cell+=c;
+  }
+  if(cell||row.length){ row.push(cell); out.push(row); }
+  const head = (out.shift()||[]).map(h=>h.trim());
+  return out.filter(r=>r.some(v=>v.trim())).map(r=>Object.fromEntries(head.map((h,i)=>[h,(r[i]||"").trim()])));
+}
+const FIELDS = {
+  date:["date applied","applied date","approx date","date"], company:["company","employer"], title:["role title","title","role","position"],
+  family:["role family","lane","track","category"], age:["posting age","listing age","listing status","age"], reposts:["times reposted","reposted","reposts"],
+  comp:["comp band","comp range","salary","pay band","compensation"], round:["furthest round","rounds reached","stage","round"],
+  outcome:["outcome","result","heard back","application status","status"], pipeline:["pipeline status","pipeline"],
+  source:["source","agency","recruiter"], client:["client disclosed","client named","client known"],
+  approved:["approved submission","submission approved","approved"], scam:["scam signals","scam"],
+  rounds:["number of rounds","rounds","interview rounds"], hours:["interview hours","hours interviewing","total hours"],
+  takehome:["take-home hours","take home hours","take-home","assignment hours"],
+  first:["first contact","first contact date"], decision:["decision date","decided","decision"],
+  interviewers:["interviewers","number of interviewers"], panel:["panel observation","panel makeup","panel"],
+  unlawful:["possibly unlawful questions","unlawful questions","illegal questions"],
+  misstated:["resume misstated","misstated"], rescheduled:["rescheduled by company","rescheduled"],
+  ghosted:["ghosted after final","ghosted"], offerchg:["offer changes","offer red flags","offer changed"]
+};
+// Columns whose names are prefixes of other columns ("rounds" vs "furthest round")
+// must match exactly before falling back to a loose "contains" match.
+// A header names a field when it equals one of the field's names, or contains it as a
+// whole word. Short names ("age", "role") must match exactly: as substrings they hit
+// ordinary words in data cells ("stage", "panel round") and pick the wrong header row.
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const namesField = (header, name) => { const h = header.trim().toLowerCase().replace(/\s+/g," ");
+  return h === name || (name.length >= 5 && new RegExp(`(^|[^a-z])${reEsc(name)}([^a-z]|$)`).test(h)); };
+// Lanes and levels work for any field: nothing below names a profession.
+// Levels come from seniority words that are common across industries.
+const LEVELS = ["Executive","Director","Manager / lead","Senior","Mid-level","Entry"];
+const levelOf = title => { const s = " " + title.toLowerCase() + " ";
+  if(/\b(chief|c[a-z]o|vp|svp|evp|vice president|head of|president|founder)\b/.test(s)) return "Executive";
+  if(/\bdirector\b/.test(s)) return "Director";
+  if(/\b(manager|mgr|lead|supervisor|foreman|superintendent|charge)\b/.test(s)) return "Manager / lead";
+  if(/\b(senior|sr|staff|principal|expert|iii|iv)\b/.test(s)) return "Senior";
+  if(/\b(junior|jr|associate|intern|internship|entry|graduate|apprentice|trainee|fellow)\b/.test(s)) return "Entry";
+  return "Mid-level"; };
+// Lanes come from the person's own titles: the phrases that repeat across them, minus
+// seniority and filler words, minus phrases so common they cannot tell lanes apart.
+const STOPWORDS = new Set("a an and the of for to in at on with by or from via new remote hybrid onsite contract contractor temporary part full time us usa global americas emea apac north south east west i ii iii iv v 1 2 3 4 senior sr staff principal junior jr associate intern lead manager mgr director head chief vp svp evp vice president executive team level based office".split(" "));
+function titleTokens(title){
+  const words = title.toLowerCase().replace(/\(.*?\)/g," ").split(/[^a-z0-9+#]+/).filter(w=>w && !STOPWORDS.has(w) && !/^\d+$/.test(w));
+  const out = new Set(words);
+  for(let i=0;i<words.length-1;i++) out.add(words[i]+" "+words[i+1]);
+  return out;
+}
+// Label a phrase the way people actually write it in their titles ("UX", "RN", "GRC").
+function labelFor(phrase, titles){
+  const seen = {}, re = new RegExp(`(^|[^A-Za-z0-9])(${reEsc(phrase).replace(/ /g,"[^A-Za-z0-9]+")})(?=[^A-Za-z0-9]|$)`, "i");
+  titles.forEach(t=>{ const m = t.match(re); if(m) seen[m[2]] = (seen[m[2]]||0)+1; });
+  const best = Object.entries(seen).sort((a,b)=>b[1]-a[1])[0];
+  const s = best ? best[0].replace(/[^A-Za-z0-9]+/g," ") : phrase;
+  return s === s.toLowerCase() ? s.replace(/\b[a-z]/g,c=>c.toUpperCase()) : s;
+}
+function autoLanes(titles){
+  const n = titles.length, df = {};
+  const toks = titles.map(t=>{ const s = titleTokens(t); s.forEach(x=>df[x]=(df[x]||0)+1); return s; });
+  const minSupport = Math.max(2, Math.round(n*0.02)), maxShare = 0.5;
+  const pickBest = (s, ok) => { let best=null;
+    s.forEach(x=>{ if(!ok(x)) return; const score = df[x]*(x.includes(" ")?1.4:1); if(!best || score>best.score) best={x,score}; });
+    return best && best.x; };
+  const counts = {};
+  toks.forEach(s=>{
+    // Prefer phrases that tell lanes apart; if a title has none, fall back to its most common phrase.
+    const x = pickBest(s, x=>df[x] >= minSupport && (n < 8 || df[x]/n <= maxShare)) || pickBest(s, x=>df[x] >= minSupport);
+    if(x) counts[x]=(counts[x]||0)+1; });
+  // Keep the eight biggest groups (everything else falls to Other), most specific phrase first
+  // so a broad word like "design" doesn't claim "content designer" titles.
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8)
+    .sort((a,b)=>(b[0].split(" ").length - a[0].split(" ").length) || b[1]-a[1])
+    .map(([x])=>({name: labelFor(x, titles), words:[x]}));
+}
+// A rule word matches a whole word or two-word phrase in the title; longer phrases a user
+// types can match anywhere. Never a bare substring ("design" must not match "designer").
+// Rules a person types may use any word, seniority included ("Leadership: director, head").
+const allTokens = title => { const w = title.toLowerCase().replace(/\(.*?\)/g," ").split(/[^a-z0-9+#]+/).filter(Boolean);
+  const out = new Set(w); for(let i=0;i<w.length-1;i++) out.add(w[i]+" "+w[i+1]); return out; };
+const laneFor = (rules, title) => { const toks = allTokens(title), s = title.toLowerCase().replace(/[^a-z0-9+#]+/g," ");
+  const hit = rules.find(r=>r.words.some(w=>toks.has(w) || (w.includes(" ") && (" "+s+" ").includes(" "+w+" ")))); return hit ? hit.name : "Other"; };
+const rulesToText = rules => rules.map(r=>`${r.name}: ${r.words.join(", ")}`).join("\n");
+const textToRules = text => text.split("\n").map(l=>l.split(":")).filter(p=>p.length>=2 && p[0].trim())
+  .map(([name,...rest])=>({name:name.trim(), words:rest.join(":").split(",").map(w=>w.trim().toLowerCase()).filter(Boolean)}));
+let laneRules = null;
+let lanesGuessed = false;
+function normalise(raw){
+  if(!raw.length) return [];
+  const keys = [...new Set(raw.flatMap(r=>Object.keys(r)))];
+  const pick = {};
+  for(const [f,names] of Object.entries(FIELDS)){
+    pick[f] = names.map(n=>keys.find(k=>k.trim().toLowerCase()===n)).find(Boolean) || names.map(n=>keys.find(k=>namesField(k,n))).find(Boolean);
+  }
+  lanesGuessed = !pick.family;
+  return raw.map(r=>{
+    const g = f => pick[f] ? String(r[pick[f]] ?? "") : "";
+    // Rounds: words ("hiring manager"), numbers ("3" rounds reached), or hints inside outcome text.
+    const roundOf = s => /offer/.test(s) ? "Offer" : /panel|tech|onsite|on-site|final|third/.test(s) ? "Panel"
+      : /hiring|manager|\bhm\b|second/.test(s) ? "Hiring manager" : /screen|recruit|first/.test(s) ? "Screener" : "";
+    const roundRaw = g("round").toLowerCase().trim();
+    const roundNum = /^\d+$/.test(roundRaw) ? +roundRaw : 0;
+    const o = (g("outcome") + " " + g("pipeline")).toLowerCase();
+    let round = roundNum ? (roundNum >= 3 ? "Panel" : roundNum === 2 ? "Hiring manager" : "Screener") : roundOf(roundRaw);
+    if(!round && /active|done|scheduled|round|screen|interview/.test(o)) round = roundOf(o.replace(/applied[^;,)]*/g,""));
+    // Outcomes, most decisive first. Waiting words ("pending", "applied 8/10") are not a reply.
+    const outcome = /offer/.test(o) ? "Offer"
+      : /reject|declin|not moving|no thanks|position (no|fil)|closed/.test(o) ? "Rejected"
+      : /withdr/.test(o) ? "Withdrawn"
+      : /active|sched|progress|interview|screen|round|done|inbound|yes/.test(o) ? "Active"
+      : round ? "Active" : "No response";
+    if(outcome==="Offer") round = "Offer";
+    const a = g("age").toLowerCase(); const m = a.match(/(\d+)\s*(days?|weeks?|months?|d|w|mo)\b/);
+    const ageDays = m ? +m[1] * (/^w/.test(m[2])?7:/^mo/.test(m[2])?30:1) : null;
+    const d = new Date(g("date"));
+    const yes = v => /^(y|yes|true|1)$/i.test(v.trim()), no = v => /^(n|no|false|0)$/i.test(v.trim());
+    const num = v => { const m = String(v).match(/[\d.]+/); return m ? +m[0] : 0; };
+    const dt = v => { const x = new Date(v); return isNaN(x) ? null : x; };
+    return { date: isNaN(d) ? null : d, company: g("company")||"Unknown", title: g("title"), family: g("family") || (pick.family ? "Unlabelled" : null), level: levelOf(g("title")),
+      ageDays, reposts: parseInt(g("reposts")) || (/repost/i.test(g("age")) ? 1 : 0), comp: pick.comp ? g("comp") : null, round, outcome: outcome==="Offer" ? "Offer" : outcome,
+      source: g("source"), clientHidden: no(g("client")), unapproved: no(g("approved")), scam: g("scam"),
+      rounds: num(g("rounds")), hours: num(g("hours")), takehome: num(g("takehome")),
+      first: dt(g("first")), decision: dt(g("decision")), interviewers: num(g("interviewers")), panel: g("panel"),
+      unlawful: g("unlawful"), misstated: no(g("misstated")) ? "" : g("misstated"),
+      rescheduled: num(g("rescheduled")), ghosted: yes(g("ghosted")), offerchg: g("offerchg"),
+      reached: s => STAGES.indexOf(round) >= STAGES.indexOf(s) && round!=="" };
+  });
+}
+
+/* ---------- render: stats ---------- */
+function renderStats(rows){
+  const n = rows.length, responded = rows.filter(r=>r.outcome!=="No response").length;
+  const interviews = rows.filter(r=>r.round).length;
+  const reach = STAGES.map(s=>rows.filter(r=>r.reached(s)).length);
+  let stall = null;
+  for(let i=0;i<STAGES.length-1;i++){
+    if(reach[i] >= 3){ const rate = reach[i+1]/reach[i]; if(!stall || rate < stall.rate) stall = {from:STAGES[i], rate}; }
+  }
+  const weeks = weekly(rows), last = weeks.slice(-4), avg = last.length ? Math.round(last.reduce((a,w)=>a+w.n,0)/last.length) : 0;
+  $("#stats").innerHTML = [
+    [n,"applications sent"],[pct(responded,n)+"%","heard back at all"],[interviews,"reached an interview"],
+    [stall ? pct(stall.rate*reach[STAGES.indexOf(stall.from)],reach[STAGES.indexOf(stall.from)])+"%" : "–", stall ? `advance past ${stall.from.toLowerCase()}: your stall point` : "not enough rounds yet", true],
+    [avg, avg>=FLOOR ? "per week lately: on pace" : `per week lately: below the floor of ${FLOOR}`]
+  ].map(([v,l,hl])=>`<div class="card stat${hl?" hl":""}"><div class="n">${esc(v)}</div><div class="l">${esc(l)}</div></div>`).join("");
+}
+
+/* ---------- render: sankey ---------- */
+function renderSankey(rows){
+  const svg = $("#sankey"), W = 1000, H = 440, nodeW = 14, pad = 16;
+  const N = rows.length;
+  const nodes = [], links = [];
+  const add = (id,label,col,kind) => { nodes.push({id,label,col,kind,in:0,out:0}); return id; };
+  add("applied",`Applied`,0,"main");
+  const noresp = rows.filter(r=>r.outcome==="No response").length;
+  const rejPre = rows.filter(r=>!r.round && r.outcome!=="No response").length;
+  add("noresp","No response",1,"dead"); add("rejpre","Closed before interview",1,"closed");
+  links.push(["applied","noresp",noresp],["applied","rejpre",rejPre]);
+  let prev = "applied";
+  STAGES.forEach((s,i)=>{
+    const reached = rows.filter(r=>r.reached(s)).length;
+    if(!reached) return;
+    const id = "s"+i; add(id,s,i+1,s==="Offer"?"ok":"main"); links.push([prev,id,reached]);
+    if(s!=="Offer"){
+      const stopped = rows.filter(r=>r.round===s);
+      const closed = stopped.filter(r=>r.outcome!=="Active").length, active = stopped.length-closed;
+      if(closed){ add(id+"c",`Closed at ${s.toLowerCase()}`,i+2,"closed"); links.push([id,id+"c",closed]); }
+      if(active){ add(id+"a",`Active at ${s.toLowerCase()}`,i+2,"active"); links.push([id,id+"a",active]); }
+    }
+    prev = id;
+  });
+  const byId = Object.fromEntries(nodes.map(n=>[n.id,n]));
+  links.forEach(([a,b,v])=>{ byId[a].out+=v; byId[b].in+=v; });
+  nodes.forEach(n=>n.v = Math.max(n.in,n.out));
+  const cols = Math.max(...nodes.map(n=>n.col))+1;
+  const colX = c => 10 + c*((W-200)/(cols-1));
+  const maxCount = Math.max(...Array.from({length:cols},(_,c)=>nodes.filter(n=>n.col===c).length));
+  const k = (H - 20 - (maxCount-1)*pad) / N;
+  // Main flow runs along the top; each column's closed/active ends sit below
+  // the previous column's, so labels never collide with the next column.
+  let floor = 0;
+  for(let c=0;c<cols;c++){
+    const col = nodes.filter(n=>n.col===c);
+    const isMain = n => n.kind==="main"||n.kind==="ok";
+    col.sort((a,b)=>(isMain(a)?0:1)-(isMain(b)?0:1));
+    let y = 10;
+    col.forEach(n=>{
+      if(!isMain(n) && c>1) y = Math.max(y, floor);
+      n.x=colX(c); n.y=y; n.h=Math.max(2,n.v*k); n.so=0; n.ti=0; y+=n.h+pad;
+      if(!isMain(n) && c>1) floor = y + 4;
+    });
+  }
+  links.sort((p,q)=>byId[p[1]].y-byId[q[1]].y);
+  const color = {main:css("--flow"),ok:css("--flow-ok"),dead:css("--flow-3"),closed:css("--flow-2"),active:css("--flow-ok")};
+  let out = "";
+  links.forEach(([a,b,v])=>{
+    const s=byId[a], t=byId[b], w=Math.max(1,v*k);
+    const y0=s.y+s.so+w/2, y1=t.y+t.ti+w/2; s.so+=w; t.ti+=w;
+    const x0=s.x+nodeW, x1=t.x, mx=(x0+x1)/2;
+    out += `<path d="M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}" fill="none" stroke="${color[t.kind]}" stroke-opacity=".38" stroke-width="${w}"><title>${esc(s.label)} → ${esc(t.label)}: ${v}</title></path>`;
+  });
+  nodes.forEach(n=>{
+    out += `<rect x="${n.x}" y="${n.y}" width="${nodeW}" height="${n.h}" rx="3" fill="${color[n.kind]}"/>`;
+    out += `<text x="${n.x+nodeW+8}" y="${n.y+n.h/2}" dominant-baseline="middle" font-size="13" fill="${css("--ink")}"><tspan font-weight="600">${esc(n.label)}</tspan><tspan fill="${css("--ink-2")}"> ${n.v} · ${pct(n.v,N)}%</tspan></text>`;
+  });
+  svg.innerHTML = out;
+}
+
+/* ---------- render: lanes ---------- */
+let convertBy = "family";
+function renderLanes(rows){
+  const key = convertBy, groups = {};
+  rows.forEach(r=>{ const k = r[key] || "Unlabelled"; const f = groups[k] ||= {n:0,iv:0}; f.n++; if(r.round) f.iv++; });
+  const order = key==="level" ? LEVELS : null;
+  const list = Object.entries(groups).sort((a,b)=> order ? order.indexOf(a[0])-order.indexOf(b[0]) : (b[1].iv/b[1].n - a[1].iv/a[1].n) || b[1].n-a[1].n);
+  document.querySelectorAll("#convertby button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.by===key));
+  $("#lanes").innerHTML = `<tr><th>${key==="level"?"Level":"Lane"}</th><th>Sent</th><th>Got an interview</th><th></th></tr>` +
+    list.map(([k,f])=>`<tr><td>${esc(k)}</td><td>${f.n}</td><td>${pct(f.iv,f.n)}%${f.n<8?` <span class="small muted">(small sample)</span>`:""}</td><td style="width:35%"><div class="bar"><i style="width:${pct(f.iv,f.n)}%"></i></div></td></tr>`).join("");
+  const guessing = lanesGuessed && key==="family";
+  $("#lanenote").textContent = key==="level" ? "Levels are read from seniority words in your job titles."
+    : guessing ? "Your tracker has no lane column, so lanes are grouped from words that repeat in your job titles. Edit them below if they don't match how you think about your search." : "Lanes come from your tracker's role family column.";
+  $("#laneedit").hidden = !guessing;
+  if(guessing && document.activeElement !== $("#lanerules")) $("#lanerules").value = rulesToText(laneRules||[]);
+}
+function reassignLanes(rules){
+  laneRules = rules; currentRows.forEach(r=>r.family = laneFor(rules, r.title)); renderLanes(currentRows);
+}
+document.addEventListener("click", e=>{
+  const by = e.target.closest("#convertby button"); if(by){ convertBy = by.dataset.by; renderLanes(currentRows); }
+  if(e.target.id==="laneapply"){ const rules = textToRules($("#lanerules").value); try{ localStorage.setItem("mirror-lanes", JSON.stringify(rules)); }catch{} reassignLanes(rules); }
+  if(e.target.id==="lanereset"){ try{ localStorage.removeItem("mirror-lanes"); }catch{} reassignLanes(autoLanes(currentRows.map(r=>r.title))); $("#lanerules").value = rulesToText(laneRules); }
+});
+
+/* ---------- render: pace ---------- */
+function weekly(rows){
+  const dated = rows.filter(r=>r.date).sort((a,b)=>a.date-b.date);
+  if(!dated.length) return [];
+  const w0 = dated[0].date.getTime(), weeks = [];
+  dated.forEach(r=>{ const i = Math.floor((r.date.getTime()-w0)/(7*864e5)); (weeks[i] ||= {n:0,iv:0}).n++; if(r.round) weeks[i].iv++; });
+  for(let i=0;i<weeks.length;i++) weeks[i] ||= {n:0,iv:0};
+  return weeks.map((w,i)=>({...w,label:new Date(w0+i*7*864e5)}));
+}
+function renderPace(rows){
+  const weeks = weekly(rows), svg = $("#pace"), W=480, H=210, b=24, l=28, r=22;
+  if(!weeks.length){ svg.innerHTML=""; return; }
+  const max = Math.max(FLOOR+2,...weeks.map(w=>w.n)), bw = (W-l-r)/weeks.length;
+  const y = v => H-b - v*(H-b-10)/max;
+  let out = `<line x1="${l}" x2="${W-r}" y1="${y(FLOOR)}" y2="${y(FLOOR)}" stroke="${css("--gold")}" stroke-dasharray="5 4"/><text x="${l-6}" y="${y(FLOOR)}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="${css("--ink-2")}">${FLOOR}</text>`;
+  weeks.forEach((w,i)=>{
+    const x = l + i*bw + 2, h = H-b-y(w.n);
+    out += `<rect x="${x}" y="${y(w.n)}" width="${Math.max(2,bw-4)}" height="${h}" rx="3" fill="${w.n>=FLOOR?css("--ember"):css("--flow-3")}"><title>Week of ${w.label.toLocaleDateString(undefined,{month:"short",day:"numeric"})}: ${w.n} sent</title></rect>`;
+    if(i%2===0) out += `<text x="${x+bw/2-2}" y="${H-6}" text-anchor="middle" font-size="10" fill="${css("--ink-2")}">${w.label.toLocaleDateString(undefined,{month:"short",day:"numeric"})}</text>`;
+  });
+  svg.innerHTML = out;
+}
+
+/* ---------- render: posting watch ---------- */
+// Every flag is an observation from the user's own tracker (or public WARN filings),
+// worded as a fact with its evidence. Never a verdict about the company.
+const STAGE_ORDER = ["Posting","Recruiter","Process","Offer"];
+const FLAGS = {
+  old:      {stage:"Posting",   c:"warn", t:"Open 60+ days",            d:"A posting was 60 or more days old when you saw it"},
+  repost:   {stage:"Posting",   c:"bad",  t:"Reposted 2+ times",        d:"The same role keeps coming back"},
+  nopay:    {stage:"Posting",   c:"warn", t:"No pay band",              d:"California requires a pay scale in postings for employers with 15+ employees"},
+  agencies: {stage:"Posting",   c:"warn", t:"Shopped by 3+ agencies",   d:"You saw this company's roles through three or more recruiting agencies"},
+  layoffs:  {stage:"Posting",   c:"bad",  t:"Recent layoffs filed",     d:"A WARN layoff notice matches this company name. Check it is the same employer."},
+  client:   {stage:"Recruiter", c:"warn", t:"Client not named",         d:"A recruiter would not say who the role is for"},
+  unapproved:{stage:"Recruiter",c:"bad",  t:"Submitted without asking", d:"A recruiter sent your resume without your approval. Duplicate submissions can knock you out."},
+  scam:     {stage:"Recruiter", c:"bad",  t:"Scam patterns",            d:"Messaging-only contact, personal email domains, or requests for ID, bank details, or equipment purchases"},
+  long:     {stage:"Process",   c:"warn", t:"Long process",             d:"5+ rounds, 6+ interview hours, a take-home over 4 hours, or 6+ weeks to a decision"},
+  unlawful: {stage:"Process",   c:"bad",  t:"Possibly unlawful question",d:"Age, family, marital status, religion, national origin, disability, or salary history (banned in California)"},
+  misstated:{stage:"Process",   c:"bad",  t:"Resume misstated",         d:"An interviewer attributed something to your resume that it does not say"},
+  panel:    {stage:"Process",   c:"warn", t:"Homogeneous panel",        d:"Your own observation of the panel as a whole, never about a named person"},
+  resched:  {stage:"Process",   c:"warn", t:"Rescheduled 2+ times",     d:"The company moved your interviews repeatedly"},
+  ghosted:  {stage:"Process",   c:"bad",  t:"Ghosted after final",      d:"No word after your last interview"},
+  silent:   {stage:"Process",   c:"bad",  t:"Silent 30+ days",          d:"Every application here got no response after 30 days"},
+  offer:    {stage:"Offer",     c:"bad",  t:"Offer changed",            d:"Lower band or title than posted, a short deadline, or pressure to name your number"}
+};
+const normCo = s => s.toLowerCase().replace(/\b(dba|d\/b\/a)\b.*/,"").replace(/[^a-z0-9& ]+/g," ")
+  .replace(/\b(inc|llc|l l c|corp|corporation|co|company|ltd|lp|llp|plc|holdings|group|the|usa|us|na)\b/g," ").replace(/\s+/g," ").trim();
+function warnFor(company){
+  const k = normCo(company); if(k.length < 3) return null;
+  if(warnData.companies[k]) return warnData.companies[k];
+  // Allow "Acme" to match "Acme Robotics" only on a whole-word prefix, and only for names long enough to be distinctive.
+  if(k.length >= 5){ const hit = Object.keys(warnData.companies).find(w => w.startsWith(k+" ") || k.startsWith(w+" ")); if(hit) return warnData.companies[hit]; }
+  return null;
+}
+function renderWatch(rows){
+  const now = Date.now(), cos = {};
+  rows.forEach(r=>{ const c = cos[normCo(r.company) || r.company] ||= {name:r.company,n:0,maxAge:0,reposts:0,nopay:0,silentOld:0,dated:0,titles:new Set(),resp:0,sources:new Set(),ev:{}};
+    const ev = (f,txt) => { (c.ev[f] ||= new Set()).add(txt); };
+    c.n++; c.titles.add(r.title); c.maxAge = Math.max(c.maxAge, r.ageDays||0); c.reposts = Math.max(c.reposts, r.reposts);
+    if(r.source && !/linkedin|indeed|referr|company site|careers|direct/i.test(r.source)) c.sources.add(r.source);
+    if(r.comp==="") c.nopay++; if(r.outcome!=="No response") c.resp++;
+    if(r.date && now - r.date.getTime() > 30*864e5){ c.dated++; if(r.outcome==="No response") c.silentOld++; }
+    if(r.clientHidden) ev("client", r.source || "recruiter");
+    if(r.unapproved) ev("unapproved", r.source || "recruiter");
+    if(r.scam) ev("scam", r.scam);
+    const span = r.first && r.decision ? Math.round((r.decision-r.first)/864e5) : 0;
+    const long = [r.rounds>=5&&`${r.rounds} rounds`, r.hours>=6&&`${r.hours} interview hours`, r.takehome>4&&`${r.takehome}-hour take-home`, span>=42&&`${Math.round(span/7)} weeks to decide`].filter(Boolean);
+    if(long.length) ev("long", long.join(", "));
+    if(r.unlawful) ev("unlawful", r.unlawful);
+    if(r.misstated) ev("misstated", /^(y|yes|true)$/i.test(r.misstated) ? "yes" : r.misstated);
+    if(/\ball\b|only|no women|no men/i.test(r.panel)) ev("panel", r.panel + (r.interviewers ? ` (${r.interviewers} interviewers)` : ""));
+    if(r.rescheduled>=2) ev("resched", `${r.rescheduled} times`);
+    if(r.ghosted) ev("ghosted", r.round ? "after reaching " + r.round.toLowerCase() : "after the last interview");
+    if(r.offerchg) ev("offer", r.offerchg);
+  });
+  const list = Object.entries(cos).map(([k,c])=>{
+    const f = {...Object.fromEntries(Object.entries(c.ev).map(([x,s])=>[x,[...s].join("; ")]))};
+    if(c.maxAge>=60) f.old = `${c.maxAge} days`;
+    if(c.reposts>=2) f.repost = `${c.reposts} times`;
+    if(c.nopay===c.n) f.nopay = "on every posting you saw";
+    if(c.sources.size>=3) f.agencies = [...c.sources].join(", ");
+    if(c.dated>=2 && c.silentOld===c.dated) f.silent = `${c.dated} of ${c.dated} applications`;
+    const w = warnFor(c.name); if(w) f.layoffs = `${w[0]}: ${w[1]} notice${w[1]>1?"s":""}, ${w[2]} employees, latest ${w[3]}${w[4].length?" ("+w[4].join(", ")+")":""}`;
+    return {k:c.name,c,f};
+  }).sort((a,b)=>Object.keys(b.f).length-Object.keys(a.f).length || b.c.n-a.c.n);
+  $("#flagkey").innerHTML = `<div>${STAGE_ORDER.map(s=>`<span class="stagekey">${s}</span>${Object.values(FLAGS).filter(f=>f.stage===s).map(f=>`<span class="flag ${f.c}" title="${esc(f.d)}">${f.t}</span>`).join("")}`).join("")}</div>`;
+  $("#warnnote").innerHTML = `Layoff check uses ${esc(warnData.source)}, ${esc(warnData.range)}. A name match is a lead to verify, not proof it is the same employer.`;
+  // Small pills in stage order; the evidence sits in a tooltip and a collapsed list (tooltips don't work on touch).
+  const cell = f => {
+    const items = Object.entries(f).sort((a,b)=>STAGE_ORDER.indexOf(FLAGS[a[0]].stage)-STAGE_ORDER.indexOf(FLAGS[b[0]].stage));
+    if(!items.length) return `<span class="muted small">Nothing unusual</span>`;
+    return items.map(([x,e])=>`<span class="flag ${FLAGS[x].c}" title="${esc(e)}">${FLAGS[x].t}</span>`).join("") +
+      `<details class="ev"><summary>details</summary><ul>${items.map(([x,e])=>`<li><b>${FLAGS[x].t}:</b> ${esc(e)}</li>`).join("")}</ul></details>`;
+  };
+  $("#watch").innerHTML = `<tr><th>Company</th><th>Applied</th><th>Heard back</th><th>What you observed</th></tr>` +
+    list.map(({k,c,f})=>`<tr><td><b>${esc(k)}</b><div class="small muted">${esc([...c.titles].filter(Boolean).join(", "))}</div></td><td>${c.n}</td><td>${c.resp}/${c.n}</td><td>${cell(f)}</td></tr>`).join("");
+}
+
+/* ---------- playbooks ---------- */
+let current = 0;
+function renderPlaybooks(){
+  $("#pblist").innerHTML = PLAYBOOKS.map((p,i)=>`<button class="card pb" aria-pressed="${i===current}" data-i="${i}"><div class="s">${esc(p.section)}</div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.blurb)}</div></button>`).join("");
+  const p = PLAYBOOKS[current];
+  $("#pbtitle").textContent = p.title; $("#pbdesc").textContent = p.blurb; $("#pbtext").textContent = p.text;
+}
+$("#pblist").addEventListener("click", e=>{ const b = e.target.closest(".pb"); if(!b) return; current = +b.dataset.i; renderPlaybooks(); });
+$("#copy").addEventListener("click", async ()=>{
+  const btn = $("#copy");
+  try { await navigator.clipboard.writeText(PLAYBOOKS[current].text); btn.textContent = "Copied"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("#pbtext")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Selected: press Copy"; }
+  setTimeout(()=>btn.textContent="Copy playbook", 1800);
+});
+
+/* ---------- wiring ---------- */
+// Many trackers keep applications on one sheet and responses or rounds on others.
+// Fill outcome and furthest round onto each application from any other sheet that
+// names the same company (and role, when the role disambiguates).
+function mergeOutcomes(rows, extras){
+  let filled = 0; const used = [];
+  extras.forEach(({name, raw})=>{
+    const other = normalise(raw).filter(r=>r.company!=="Unknown");
+    if(!other.length) return;
+    const byKey = {}, byCo = {};
+    other.forEach(o=>{ const co = normCo(o.company); (byCo[co] ||= []).push(o); byKey[co+"|"+o.title.toLowerCase()] = o; });
+    let n = 0;
+    rows.forEach(r=>{
+      const co = normCo(r.company);
+      const o = byKey[co+"|"+r.title.toLowerCase()] || (byCo[co] && byCo[co].length===1 ? byCo[co][0] : null);
+      if(!o) return;
+      const better = STAGES.indexOf(o.round) > STAGES.indexOf(r.round);
+      if(better){ r.round = o.round; const rr = o.round; r.reached = s => STAGES.indexOf(rr) >= STAGES.indexOf(s); }
+      if(o.outcome!=="No response" && (r.outcome==="No response" || r.outcome==="Active" || better)) r.outcome = o.outcome;
+      if(better || o.outcome!=="No response") n++;
+    });
+    if(n){ filled += n; used.push(name); }
+  });
+  return {filled, used};
+}
+let currentRows = [];
+function load(raw, label, extras=[]){
+  warnData = label.startsWith("the sample") ? SAMPLE_WARN : WARN;
+  const rows = normalise(raw);
+  const merged = extras.length ? mergeOutcomes(rows, extras) : {filled:0, used:[]};
+  if(lanesGuessed){
+    let saved = null; try{ saved = JSON.parse(localStorage.getItem("mirror-lanes")||"null"); }catch{}
+    laneRules = saved && saved.length ? saved : autoLanes(rows.map(r=>r.title));
+    rows.forEach(r=>r.family = laneFor(laneRules, r.title));
+  }
+  currentRows = rows;
+  if(!rows.length){ $("#loadmsg").textContent = "No rows found. Check the first line holds column names."; return; }
+  $("#banner").innerHTML = `Showing <b>${esc(label)}</b>: ${rows.length} applications. ${label.startsWith("the sample")?"Every company in it is fictional.":"This stays in your browser."}${merged.filled ? ` Outcomes and rounds for ${merged.filled} applications filled in from ${merged.used.map(esc).join(", ")}.` : ""} <a href="#" id="toload">Load your own</a>`;
+  $("#toload").onclick = e=>{ e.preventDefault(); show("load"); };
+  renderStats(rows); renderSankey(rows); renderLanes(rows); renderPace(rows); renderWatch(rows);
+  $("#loadmsg").textContent = `Loaded ${rows.length} rows.`;
+}
+function show(tab){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===tab));
+  document.querySelectorAll("[data-panel]").forEach(p=>p.hidden = p.dataset.panel!==tab);
+  try{ localStorage.setItem("mirror-tab", tab); }catch{}
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.tab)));
+$("#sample").onclick = ()=>{ load(sampleRows(),"the sample search"); show("mirror"); };
+$("#template").onclick = ()=>{ $("#paste").value = TEMPLATE; };
+$("#loadpaste").onclick = ()=>{ const v = $("#paste").value.trim(); if(v){ load(parseCSV(v),"your pasted tracker"); show("mirror"); } };
+/* ---------- spreadsheets ---------- */
+// Score a candidate header row by how many tracker fields its cells name.
+function headerScore(cells){
+  const lc = cells.map(c=>String(c)).filter(c=>c.trim() && c.length <= 40);
+  return Object.values(FIELDS).filter(names=>names.some(n=>lc.some(c=>namesField(c,n)))).length;
+}
+// Turn one sheet into row objects, finding the header row in the first 15 rows.
+function sheetRows(ws){
+  const grid = XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false,dateNF:"yyyy-mm-dd",blankrows:false});
+  let best = 0, score = -1;
+  grid.slice(0,15).forEach((r,i)=>{ const s = headerScore(r); if(s > score){ score = s; best = i; } });
+  const head = (grid[best]||[]).map((h,i)=>String(h).replace(/\s+/g," ").trim() || `Column ${i+1}`);
+  const rows = grid.slice(best+1).filter(r=>r.some(v=>String(v).trim())).map(r=>Object.fromEntries(head.map((h,i)=>[h,String(r[i]??"").trim()])));
+  return {rows, score};
+}
+let workbook = null, workbookName = "";
+function loadSheet(name){
+  const {rows} = sheetRows(workbook.Sheets[name]);
+  const extras = workbook.SheetNames.filter(n=>n!==name).map(n=>({name:n, raw:sheetRows(workbook.Sheets[n]).rows}))
+    // Only sheets that actually record outcomes or rounds may fill them in.
+    .filter(x=>x.raw.length && Object.keys(x.raw[0]).some(h=>/^(outcome|result|pipeline status|application status|rounds reached|furthest round|stage)$/i.test(h.trim())));
+  load(rows, `${workbookName} · ${name}`, extras); show("mirror");
+}
+function openWorkbook(buf, name){
+  if(typeof XLSX === "undefined"){ $("#loadmsg").textContent = "Spreadsheet support needs an internet connection. Export the sheet as CSV instead."; return; }
+  try { workbook = XLSX.read(buf,{type:"array",cellDates:true}); }
+  catch { $("#loadmsg").textContent = "That file could not be read as a spreadsheet."; return; }
+  workbookName = name;
+  const ranked = workbook.SheetNames.map(n=>{ const s = sheetRows(workbook.Sheets[n]); return {n, score:s.score, count:s.rows.length}; })
+    .sort((a,b)=>b.score-a.score || b.count-a.count);
+  // Treat sheets within one point of the best header match as equally tracker-like,
+  // and among those take the longest list: that is usually every application sent.
+  const top = ranked[0] ? ranked[0].score : 0;
+  ranked.sort((a,b)=>((b.score>=top-1)-(a.score>=top-1)) || b.count-a.count);
+  $("#sheet").innerHTML = ranked.map(s=>`<option value="${esc(s.n)}">${esc(s.n)} (${s.count} rows)</option>`).join("");
+  $("#sheetpick").hidden = workbook.SheetNames.length < 2;
+  $("#sheetwhy").textContent = workbook.SheetNames.length > 1 ? "Picked the sheet that looks most like a tracker. Switch if it guessed wrong." : "";
+  loadSheet(ranked[0].n);
+}
+$("#sheet").onchange = e=>loadSheet(e.target.value);
+$("#file").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  if(/\.csv$/i.test(f.name) || f.type==="text/csv"){
+    $("#sheetpick").hidden = true;
+    fr.onload = ()=>{ load(parseCSV(fr.result), f.name); show("mirror"); }; fr.readAsText(f);
+  } else {
+    fr.onload = ()=>openWorkbook(new Uint8Array(fr.result), f.name); fr.readAsArrayBuffer(f);
+  }
+};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>$("#sample") && load(lastRaw, lastLabel, lastExtras));
+let lastRaw, lastLabel, lastExtras; const _load = load; load = (raw,label,extras=[])=>{ lastRaw=raw; lastLabel=label; lastExtras=extras; _load(raw,label,extras); };
+renderPlaybooks();
+load(sampleRows(),"the sample search");
+try{ const t = localStorage.getItem("mirror-tab"); if(t) show(t); }catch{}
+</script>

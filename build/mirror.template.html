@@ -1,0 +1,739 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Make the Mirror True</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f3ece2; --ink:#2a211c; --ink-2:#6f6259;
+  --line:#e6dccf; --ember:#c8501c; --ember-soft:#f7e2d6; --gold:#b98a1f; --sage:#5d7d5a;
+  --warn-bg:#fbefd9; --warn-ink:#8a5a07; --bad-bg:#f8e0dc; --bad-ink:#9b2f1f;
+  --flow:#c8501c; --flow-2:#b98a1f; --flow-3:#9a8d82; --flow-ok:#5d7d5a;
+  --shadow:0 1px 2px rgb(42 33 28 / .06), 0 8px 24px rgb(42 33 28 / .06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17120f; --surface:#211a16; --surface-2:#2a221d; --ink:#f3ebe2; --ink-2:#b4a598;
+    --line:#3a2f28; --ember:#ee7a44; --ember-soft:#3b2318; --gold:#dcae45; --sage:#8fb38a;
+    --warn-bg:#3a2c12; --warn-ink:#f0c46a; --bad-bg:#3d1d17; --bad-ink:#f39a87;
+    --flow:#ee7a44; --flow-2:#dcae45; --flow-3:#7d7067; --flow-ok:#8fb38a;
+    --shadow:0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17120f; --surface:#211a16; --surface-2:#2a221d; --ink:#f3ebe2; --ink-2:#b4a598;
+  --line:#3a2f28; --ember:#ee7a44; --ember-soft:#3b2318; --gold:#dcae45; --sage:#8fb38a;
+  --warn-bg:#3a2c12; --warn-ink:#f0c46a; --bad-bg:#3d1d17; --bad-ink:#f39a87;
+  --flow:#ee7a44; --flow-2:#dcae45; --flow-3:#7d7067; --flow-ok:#8fb38a;
+  --shadow:0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.05}
+h2{font-size:1.45rem;margin-bottom:6px}
+h3{font-size:1.08rem}
+.eyebrow{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);font-weight:600}
+.lede{color:var(--ink-2);max-width:62ch;font-size:1.05rem;margin:12px 0 0}
+header{padding-block:12px 24px;border-bottom:1px solid var(--line);margin-bottom:22px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 0}
+nav.tabs button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:8px 16px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.stat .n{font-family:Fraunces,Georgia,serif;font-size:2.1rem;font-weight:700;line-height:1}
+.stat .l{color:var(--ink-2);font-size:.86rem;margin-top:6px}
+.stat.hl{background:var(--ember-soft);border-color:transparent}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer}
+.btn.primary{background:var(--ember);border-color:var(--ember);color:var(--bg)}
+.muted{color:var(--ink-2)}
+.small{font-size:.86rem}
+section{margin-top:22px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);font-weight:600}
+.flag{display:inline-block;font-size:.72rem;font-weight:600;line-height:1.5;padding:1px 8px;border-radius:999px;margin:2px 3px 2px 0;white-space:nowrap;cursor:default}
+.ev{margin-top:4px}
+.ev summary{font-size:.76rem;color:var(--ink-2);cursor:pointer;list-style:none}
+.ev summary::-webkit-details-marker{display:none}
+.ev ul{margin:4px 0 0;padding-left:16px;font-size:.8rem;color:var(--ink-2)}
+.ev li b{color:var(--ink);font-weight:600}
+.stagekey{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);font-weight:600;margin:0 6px 0 10px}
+.stagekey:first-child{margin-left:0}
+.flag.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.flag.bad{background:var(--bad-bg);color:var(--bad-ink)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:80px}
+.bar>i{display:block;height:100%;background:var(--ember)}
+textarea{width:100%;min-height:120px;font:13px/1.45 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface-2);color:var(--ink)}
+svg text{font-family:Inter,system-ui,sans-serif}
+.note{border-left:3px solid var(--gold);padding:8px 12px;background:var(--surface-2);border-radius:0 10px 10px 0}
+.pb-list{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.pb{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.pb[aria-pressed="true"]{outline:2px solid var(--ember)}
+#convertby button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pb .t{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.05rem}
+.pb .s{color:var(--ember);font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+pre.play{white-space:pre-wrap;word-break:break-word;font:13px/1.55 ui-monospace,Menlo,monospace;background:var(--surface-2);border-radius:12px;padding:16px;max-height:460px;overflow:auto;margin:12px 0 0}
+.how{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.how b{display:block;margin-bottom:4px}
+footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Women in Security · November 12</div>
+    <h1>Make the mirror true.</h1>
+    <p class="lede">Your job search, told by your own data. Load a tracker to see your funnel, where you stall, your pace, and which postings show warning signs. Everything runs in this page; nothing you load leaves your device.</p>
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="mirror">Your mirror</button>
+      <button role="tab" aria-selected="false" data-tab="postings">Posting watch</button>
+      <button role="tab" aria-selected="false" data-tab="playbooks">Playbooks for any AI</button>
+      <button role="tab" aria-selected="false" data-tab="load">Load your tracker</button>
+    </nav>
+  </header>
+
+  <div id="banner" class="note small" style="margin-bottom:18px"></div>
+
+  <!-- MIRROR -->
+  <div data-panel="mirror">
+    <div class="grid stats" id="stats"></div>
+    <section class="card">
+      <h2>Where your applications go</h2>
+      <p class="muted small" style="margin:0 0 10px">Every application, from sent to the furthest round it reached.</p>
+      <div class="scroll"><svg id="sankey" role="img" aria-label="Application funnel" width="1000" height="440"></svg></div>
+    </section>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:22px">
+      <section class="card" style="margin:0">
+        <h2>What converts</h2>
+        <p class="muted small" style="margin:0 0 10px">How often each kind of role turned into an interview. Trust the data over your instinct about where your strength is.</p>
+        <div class="row small" id="convertby" style="margin-bottom:8px"><button class="btn" data-by="family" aria-pressed="true">By lane</button><button class="btn" data-by="level" aria-pressed="false">By level</button></div>
+        <div class="scroll"><table id="lanes"></table></div>
+        <p class="small muted" id="lanenote" style="margin:8px 0 0"></p>
+        <details id="laneedit" hidden style="margin-top:8px"><summary class="small" style="cursor:pointer;font-weight:600">Edit lanes</summary>
+          <p class="small muted" style="margin:6px 0">One lane per line: a name, a colon, then words from job titles that belong to it. The first line that matches wins, so put specific lanes first.</p>
+          <textarea id="lanerules" style="min-height:110px"></textarea>
+          <div class="row" style="margin-top:6px"><button class="btn primary" id="laneapply">Apply</button><button class="btn" id="lanereset">Reset to automatic</button></div>
+        </details>
+      </section>
+      <section class="card" style="margin:0">
+        <h2>Keep the reps up</h2>
+        <p class="muted small" style="margin:0 0 10px">Applications per week. When interviews ramp up, this is the line that quietly collapses. The dashed line is a floor of 12.</p>
+        <div class="scroll"><svg id="pace" role="img" aria-label="Applications per week" width="480" height="210"></svg></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- POSTINGS -->
+  <div data-panel="postings" hidden>
+    <section class="card" style="margin-top:0">
+      <h2>Posting watch</h2>
+      <p class="muted" style="margin:0 0 12px">What you observed about each company, from the posting to the offer. These are facts from your own tracker, not verdicts: a long-open role can be a hard seat to fill, or a posting nobody intends to fill. Use them to decide where your limited applications go.</p>
+      <div class="row" id="flagkey" style="margin-bottom:8px;align-items:flex-start"></div>
+      <p class="small muted" id="warnnote" style="margin:0 0 10px"></p>
+      <div class="scroll"><table id="watch"></table></div>
+    </section>
+  </div>
+
+  <!-- PLAYBOOKS -->
+  <div data-panel="playbooks" hidden>
+    <section class="card" style="margin-top:0">
+      <h2>Playbooks for any AI</h2>
+      <p class="muted" style="margin:0 0 14px">Eight playbooks, one per part of the talk. They work in ChatGPT, Gemini, or Claude. Each one makes the AI name what fell flat before it is allowed to tell you what went well.</p>
+      <div class="grid how small">
+        <div><b>ChatGPT</b>Paste it at the start of a chat, or into a Project's instructions so every chat in it follows the playbook.</div>
+        <div><b>Gemini</b>Create a Gem and paste the playbook as its instructions.</div>
+        <div><b>Claude</b>Paste it into a Project's instructions, or install the skill version from the kit.</div>
+      </div>
+    </section>
+    <div class="grid pb-list" id="pblist" style="margin-top:16px"></div>
+    <section class="card" id="pbview">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="pbtitle"></h2>
+        <button class="btn primary" id="copy">Copy playbook</button>
+      </div>
+      <p class="muted small" id="pbdesc" style="margin:4px 0 0"></p>
+      <pre class="play" id="pbtext"></pre>
+    </section>
+  </div>
+
+  <!-- LOAD -->
+  <div data-panel="load" hidden>
+    <section class="card" style="margin-top:0">
+      <h2>Load your tracker</h2>
+      <p class="muted" style="margin:0 0 12px">Choose your tracker file: Excel (.xlsx, .xls), OpenDocument (.ods), or CSV from Google Sheets, Numbers, or Notion. You can also paste CSV below. Column names are matched loosely, so your own format usually works.</p>
+      <div class="row">
+        <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.ods,.csv,text/csv">
+        <button class="btn" id="sample">Use the sample search</button>
+        <button class="btn" id="template">Show the template</button>
+      </div>
+      <div class="row small" id="sheetpick" hidden style="margin-top:12px"><label for="sheet"><b>Sheet</b></label><select id="sheet" class="btn"></select><span class="muted" id="sheetwhy"></span></div>
+      <textarea id="paste" placeholder="Or paste CSV here" style="margin-top:12px"></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="loadpaste">Load pasted CSV</button><span class="small muted" id="loadmsg"></span></div>
+    </section>
+    <section class="card">
+      <h3>Columns it understands</h3>
+      <table class="small" style="margin-top:8px">
+        <tr><th>Column</th><th>Used for</th></tr>
+        <tr><td>Date applied</td><td>Pace, silence after 30 days</td></tr>
+        <tr><td>Company · Role title</td><td>Posting watch</td></tr>
+        <tr><td>Role family</td><td>What converts</td></tr>
+        <tr><td>Posting age (e.g. "3 days", "6 weeks")</td><td>Open 60+ days</td></tr>
+        <tr><td>Times reposted</td><td>Repeat reposts</td></tr>
+        <tr><td>Comp band</td><td>Missing pay band</td></tr>
+        <tr><td>Furthest round (Screener, Hiring manager, Panel, Offer)</td><td>Funnel, where you stall</td></tr>
+        <tr><td>Outcome (No response, Rejected, Active, Offer, Withdrawn)</td><td>Funnel, response rate</td></tr>
+        <tr><td>Source · Client disclosed · Approved submission · Scam signals</td><td>Recruiter flags, agencies shopping a role</td></tr>
+        <tr><td>Number of rounds · Interview hours · Take-home hours · First contact · Decision date</td><td>Long process</td></tr>
+        <tr><td>Interviewers · Panel observation (your view of the panel as a whole)</td><td>Homogeneous panel</td></tr>
+        <tr><td>Possibly unlawful questions · Resume misstated · Rescheduled by company · Ghosted after final</td><td>Process flags</td></tr>
+        <tr><td>Offer changes</td><td>Offer flags</td></tr>
+      </table>
+      <p class="small muted" style="margin:10px 0 0">You don't have to type the interview columns yourself. The Interview debrief playbook fills them in from your transcript.</p>
+    </section>
+  </div>
+
+  <footer>From the talk <i>Getting in Touch with Your Inner Narcissist to Accelerate Your Job Search</i> by Caryn Moore. The sample search is fictional. Find Caryn on LinkedIn.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const PLAYBOOKS = /*PLAYBOOKS*/;
+const FLOOR = 12;
+const TEMPLATE = "Date applied,Company,Role title,Role family,Source,Client disclosed,Approved submission,Scam signals,Posting age,Times reposted,Comp band,Furthest round,Outcome,Number of rounds,Interview hours,Take-home hours,First contact,Decision date,Interviewers,Panel observation,Possibly unlawful questions,Resume misstated,Rescheduled by company,Ghosted after final,Offer changes\n2026-11-13,Example Co,Security Engineer,Security engineering,LinkedIn,,,,3 days,0,$150k-$180k,Screener,Active,1,0.5,,2026-11-15,,1,,,,0,,\n";
+const STAGES = ["Screener","Hiring manager","Panel","Offer"];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pct = (a,b) => b ? Math.round(100*a/b) : 0;
+
+/* ---------- sample data (fictional) ---------- */
+// Fictional process and offer details for the sample search, keyed by company.
+const EXTRA = {
+  "Saltmarsh AI": {"Number of rounds":"6","Interview hours":"7.5","Take-home hours":"8","First contact":"2026-06-20","Decision date":"2026-08-21"},
+  "Pinecrest Bank": {"Interviewers":"5","Panel observation":"All men","Possibly unlawful questions":"Asked whether I have kids"},
+  "Cinder Labs": {"Resume misstated":"Said I claimed securing LLMs in 2019","Rescheduled by company":"3"},
+  "Copperleaf": {"Possibly unlawful questions":"Asked for my salary history"}
+};
+// Fictional layoff filings, used only with the sample search.
+const SAMPLE_WARN = {source:"Sample data (fictional)", range:"for the sample search only", companies:{"harbor & vale":["Harbor & Vale, Inc.",2,140,"2026-09-03",["San Francisco"]]}};
+const WARN = /*WARN*/;
+let warnData = WARN;
+
+function sampleRows(){
+  let seed = 11; const r = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  // [company, role family, titles, posting age days, reposts, pay band listed, silent]
+  const cos = [
+    ["Larkspur Health","GRC",["GRC Analyst"],12,0,true],["Northwind Ledger","GRC",["Compliance Manager","GRC Lead"],20,0,true],
+    ["Quillmark","GRC",["GRC Analyst"],126,5,true],["Harbor & Vale","Security engineering",["Security Engineer"],9,0,true],
+    ["Brightline Ops","IT operations",["IT Ops Lead"],15,0,true],["Cinder Labs","Security engineering",["Detection Engineer"],6,0,true],
+    ["Tessellate","GRC",["Risk Analyst"],25,1,true],["Bluefin Pay","Security engineering",["Security Engineer","AppSec Engineer"],18,0,true],
+    ["Orchard Systems","IT operations",["Systems Engineer"],30,0,true],["Meridian Grid","GRC",["Compliance Manager"],40,0,true],
+    ["Fernway","Security engineering",["Cloud Security Engineer"],11,0,true],["Copperleaf","GRC",["GRC Analyst"],22,0,true],
+    ["Saltmarsh AI","Security engineering",["Security Engineer"],119,1,true],["Pinecrest Bank","GRC",["Compliance Manager"],35,4,false],
+    ["Lumen Retail","IT operations",["IT Ops Lead"],28,0,false,true],["Stillwater Cloud","Security engineering",["Detection Engineer"],14,0,true]
+  ];
+  const rate = {"GRC":0.08,"Security engineering":0.32,"IT operations":0.16};
+  const perWeek = [14,17,12,16,19,13,15,11,6,4,3,5,4,7,5,6,4];
+  const rows = []; const start = new Date("2026-06-01");
+  perWeek.forEach((n,week)=>{ for(let j=0;j<n;j++){
+    const d = new Date(start.getTime() + (week*7 + Math.floor(r()*5))*864e5);
+    const c = cos[Math.floor(r()*cos.length)];
+    let round="", outcome="No response";
+    const x = r();
+    if(!c[6] && x < rate[c[1]]){
+      round="Screener"; outcome = r()<.45 ? "Rejected" : "Active";
+      if(r()<.65){ round="Hiring manager"; outcome = r()<.45 ? "Rejected":"Active";
+        if(r()<.6){ round="Panel"; outcome = r()<.75 ? "Rejected":"Active";
+          if(r()<.25){ round="Offer"; outcome="Offer"; } } }
+    } else if (!c[6] && x < rate[c[1]]+0.24) outcome="Rejected";
+    const age = c[3] + Math.floor(r()*6);
+    rows.push({
+      "Date applied": d.toISOString().slice(0,10), Company: c[0], "Role title": c[2][Math.floor(r()*c[2].length)],
+      "Role family": c[1], "Posting age": age>13 ? Math.round(age/7)+" weeks" : age+" days",
+      "Times reposted": String(c[4]), "Comp band": c[5] ? "$140k-$185k" : "",
+      "Furthest round": round, Outcome: outcome, Source: "LinkedIn", ...(EXTRA[c[0]] || {})
+    });
+  }});
+  // Ghosted only on the application that reached the panel.
+  const ghost = rows.filter(x=>x.Company==="Cinder Labs" && x["Furthest round"]==="Panel").pop() || rows.find(x=>x.Company==="Cinder Labs" && x["Furthest round"]);
+  if(ghost){ ghost["Ghosted after final"] = "Yes"; ghost.Outcome = "No response"; }
+  // Same role shopped by three agencies, client never named.
+  const agencies = ["Apex Search","Kinetic Talent","Bridgewell Recruiting"];
+  rows.filter(x=>x.Company==="Northwind Ledger").forEach((x,i)=>{ x.Source = agencies[i%3]; x["Client disclosed"] = "No"; if(i%3===1) x["Approved submission"] = "No"; });
+  // A recruiter message with scam patterns.
+  rows.push({"Date applied":"2026-08-19",Company:"Unnamed client via Vantage Talent","Role title":"Remote Security Analyst","Role family":"GRC",
+    "Posting age":"2 days","Times reposted":"0","Comp band":"$200k-$260k","Furthest round":"",Outcome:"Withdrawn",Source:"Vantage Talent",
+    "Client disclosed":"No","Scam signals":"Telegram only; asked for SSN and bank details before an interview"});
+  // The talk's ending: at least one of those became an offer.
+  const panel = rows.filter(r=>r["Furthest round"]==="Panel" && r.Outcome==="Active").pop();
+  if(panel){ panel["Furthest round"]="Offer"; panel.Outcome="Offer"; panel["Offer changes"]="Title down-levelled from Senior; 48-hour deadline"; }
+  return rows;
+}
+
+/* ---------- CSV ---------- */
+function parseCSV(text){
+  const out=[]; let row=[], cell="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cell); out.push(row); row=[]; cell=""; }
+    else cell+=c;
+  }
+  if(cell||row.length){ row.push(cell); out.push(row); }
+  const head = (out.shift()||[]).map(h=>h.trim());
+  return out.filter(r=>r.some(v=>v.trim())).map(r=>Object.fromEntries(head.map((h,i)=>[h,(r[i]||"").trim()])));
+}
+const FIELDS = {
+  date:["date applied","applied date","approx date","date"], company:["company","employer"], title:["role title","title","role","position"],
+  family:["role family","lane","track","category"], age:["posting age","listing age","listing status","age"], reposts:["times reposted","reposted","reposts"],
+  comp:["comp band","comp range","salary","pay band","compensation"], round:["furthest round","rounds reached","stage","round"],
+  outcome:["outcome","result","heard back","application status","status"], pipeline:["pipeline status","pipeline"],
+  source:["source","agency","recruiter"], client:["client disclosed","client named","client known"],
+  approved:["approved submission","submission approved","approved"], scam:["scam signals","scam"],
+  rounds:["number of rounds","rounds","interview rounds"], hours:["interview hours","hours interviewing","total hours"],
+  takehome:["take-home hours","take home hours","take-home","assignment hours"],
+  first:["first contact","first contact date"], decision:["decision date","decided","decision"],
+  interviewers:["interviewers","number of interviewers"], panel:["panel observation","panel makeup","panel"],
+  unlawful:["possibly unlawful questions","unlawful questions","illegal questions"],
+  misstated:["resume misstated","misstated"], rescheduled:["rescheduled by company","rescheduled"],
+  ghosted:["ghosted after final","ghosted"], offerchg:["offer changes","offer red flags","offer changed"]
+};
+// Columns whose names are prefixes of other columns ("rounds" vs "furthest round")
+// must match exactly before falling back to a loose "contains" match.
+// A header names a field when it equals one of the field's names, or contains it as a
+// whole word. Short names ("age", "role") must match exactly: as substrings they hit
+// ordinary words in data cells ("stage", "panel round") and pick the wrong header row.
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const namesField = (header, name) => { const h = header.trim().toLowerCase().replace(/\s+/g," ");
+  return h === name || (name.length >= 5 && new RegExp(`(^|[^a-z])${reEsc(name)}([^a-z]|$)`).test(h)); };
+// Lanes and levels work for any field: nothing below names a profession.
+// Levels come from seniority words that are common across industries.
+const LEVELS = ["Executive","Director","Manager / lead","Senior","Mid-level","Entry"];
+const levelOf = title => { const s = " " + title.toLowerCase() + " ";
+  if(/\b(chief|c[a-z]o|vp|svp|evp|vice president|head of|president|founder)\b/.test(s)) return "Executive";
+  if(/\bdirector\b/.test(s)) return "Director";
+  if(/\b(manager|mgr|lead|supervisor|foreman|superintendent|charge)\b/.test(s)) return "Manager / lead";
+  if(/\b(senior|sr|staff|principal|expert|iii|iv)\b/.test(s)) return "Senior";
+  if(/\b(junior|jr|associate|intern|internship|entry|graduate|apprentice|trainee|fellow)\b/.test(s)) return "Entry";
+  return "Mid-level"; };
+// Lanes come from the person's own titles: the phrases that repeat across them, minus
+// seniority and filler words, minus phrases so common they cannot tell lanes apart.
+const STOPWORDS = new Set("a an and the of for to in at on with by or from via new remote hybrid onsite contract contractor temporary part full time us usa global americas emea apac north south east west i ii iii iv v 1 2 3 4 senior sr staff principal junior jr associate intern lead manager mgr director head chief vp svp evp vice president executive team level based office".split(" "));
+function titleTokens(title){
+  const words = title.toLowerCase().replace(/\(.*?\)/g," ").split(/[^a-z0-9+#]+/).filter(w=>w && !STOPWORDS.has(w) && !/^\d+$/.test(w));
+  const out = new Set(words);
+  for(let i=0;i<words.length-1;i++) out.add(words[i]+" "+words[i+1]);
+  return out;
+}
+// Label a phrase the way people actually write it in their titles ("UX", "RN", "GRC").
+function labelFor(phrase, titles){
+  const seen = {}, re = new RegExp(`(^|[^A-Za-z0-9])(${reEsc(phrase).replace(/ /g,"[^A-Za-z0-9]+")})(?=[^A-Za-z0-9]|$)`, "i");
+  titles.forEach(t=>{ const m = t.match(re); if(m) seen[m[2]] = (seen[m[2]]||0)+1; });
+  const best = Object.entries(seen).sort((a,b)=>b[1]-a[1])[0];
+  const s = best ? best[0].replace(/[^A-Za-z0-9]+/g," ") : phrase;
+  return s === s.toLowerCase() ? s.replace(/\b[a-z]/g,c=>c.toUpperCase()) : s;
+}
+function autoLanes(titles){
+  const n = titles.length, df = {};
+  const toks = titles.map(t=>{ const s = titleTokens(t); s.forEach(x=>df[x]=(df[x]||0)+1); return s; });
+  const minSupport = Math.max(2, Math.round(n*0.02)), maxShare = 0.5;
+  const pickBest = (s, ok) => { let best=null;
+    s.forEach(x=>{ if(!ok(x)) return; const score = df[x]*(x.includes(" ")?1.4:1); if(!best || score>best.score) best={x,score}; });
+    return best && best.x; };
+  const counts = {};
+  toks.forEach(s=>{
+    // Prefer phrases that tell lanes apart; if a title has none, fall back to its most common phrase.
+    const x = pickBest(s, x=>df[x] >= minSupport && (n < 8 || df[x]/n <= maxShare)) || pickBest(s, x=>df[x] >= minSupport);
+    if(x) counts[x]=(counts[x]||0)+1; });
+  // Keep the eight biggest groups (everything else falls to Other), most specific phrase first
+  // so a broad word like "design" doesn't claim "content designer" titles.
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8)
+    .sort((a,b)=>(b[0].split(" ").length - a[0].split(" ").length) || b[1]-a[1])
+    .map(([x])=>({name: labelFor(x, titles), words:[x]}));
+}
+// A rule word matches a whole word or two-word phrase in the title; longer phrases a user
+// types can match anywhere. Never a bare substring ("design" must not match "designer").
+// Rules a person types may use any word, seniority included ("Leadership: director, head").
+const allTokens = title => { const w = title.toLowerCase().replace(/\(.*?\)/g," ").split(/[^a-z0-9+#]+/).filter(Boolean);
+  const out = new Set(w); for(let i=0;i<w.length-1;i++) out.add(w[i]+" "+w[i+1]); return out; };
+const laneFor = (rules, title) => { const toks = allTokens(title), s = title.toLowerCase().replace(/[^a-z0-9+#]+/g," ");
+  const hit = rules.find(r=>r.words.some(w=>toks.has(w) || (w.includes(" ") && (" "+s+" ").includes(" "+w+" ")))); return hit ? hit.name : "Other"; };
+const rulesToText = rules => rules.map(r=>`${r.name}: ${r.words.join(", ")}`).join("\n");
+const textToRules = text => text.split("\n").map(l=>l.split(":")).filter(p=>p.length>=2 && p[0].trim())
+  .map(([name,...rest])=>({name:name.trim(), words:rest.join(":").split(",").map(w=>w.trim().toLowerCase()).filter(Boolean)}));
+let laneRules = null;
+let lanesGuessed = false;
+function normalise(raw){
+  if(!raw.length) return [];
+  const keys = [...new Set(raw.flatMap(r=>Object.keys(r)))];
+  const pick = {};
+  for(const [f,names] of Object.entries(FIELDS)){
+    pick[f] = names.map(n=>keys.find(k=>k.trim().toLowerCase()===n)).find(Boolean) || names.map(n=>keys.find(k=>namesField(k,n))).find(Boolean);
+  }
+  lanesGuessed = !pick.family;
+  return raw.map(r=>{
+    const g = f => pick[f] ? String(r[pick[f]] ?? "") : "";
+    // Rounds: words ("hiring manager"), numbers ("3" rounds reached), or hints inside outcome text.
+    const roundOf = s => /offer/.test(s) ? "Offer" : /panel|tech|onsite|on-site|final|third/.test(s) ? "Panel"
+      : /hiring|manager|\bhm\b|second/.test(s) ? "Hiring manager" : /screen|recruit|first/.test(s) ? "Screener" : "";
+    const roundRaw = g("round").toLowerCase().trim();
+    const roundNum = /^\d+$/.test(roundRaw) ? +roundRaw : 0;
+    const o = (g("outcome") + " " + g("pipeline")).toLowerCase();
+    let round = roundNum ? (roundNum >= 3 ? "Panel" : roundNum === 2 ? "Hiring manager" : "Screener") : roundOf(roundRaw);
+    if(!round && /active|done|scheduled|round|screen|interview/.test(o)) round = roundOf(o.replace(/applied[^;,)]*/g,""));
+    // Outcomes, most decisive first. Waiting words ("pending", "applied 8/10") are not a reply.
+    const outcome = /offer/.test(o) ? "Offer"
+      : /reject|declin|not moving|no thanks|position (no|fil)|closed/.test(o) ? "Rejected"
+      : /withdr/.test(o) ? "Withdrawn"
+      : /active|sched|progress|interview|screen|round|done|inbound|yes/.test(o) ? "Active"
+      : round ? "Active" : "No response";
+    if(outcome==="Offer") round = "Offer";
+    const a = g("age").toLowerCase(); const m = a.match(/(\d+)\s*(days?|weeks?|months?|d|w|mo)\b/);
+    const ageDays = m ? +m[1] * (/^w/.test(m[2])?7:/^mo/.test(m[2])?30:1) : null;
+    const d = new Date(g("date"));
+    const yes = v => /^(y|yes|true|1)$/i.test(v.trim()), no = v => /^(n|no|false|0)$/i.test(v.trim());
+    const num = v => { const m = String(v).match(/[\d.]+/); return m ? +m[0] : 0; };
+    const dt = v => { const x = new Date(v); return isNaN(x) ? null : x; };
+    return { date: isNaN(d) ? null : d, company: g("company")||"Unknown", title: g("title"), family: g("family") || (pick.family ? "Unlabelled" : null), level: levelOf(g("title")),
+      ageDays, reposts: parseInt(g("reposts")) || (/repost/i.test(g("age")) ? 1 : 0), comp: pick.comp ? g("comp") : null, round, outcome: outcome==="Offer" ? "Offer" : outcome,
+      source: g("source"), clientHidden: no(g("client")), unapproved: no(g("approved")), scam: g("scam"),
+      rounds: num(g("rounds")), hours: num(g("hours")), takehome: num(g("takehome")),
+      first: dt(g("first")), decision: dt(g("decision")), interviewers: num(g("interviewers")), panel: g("panel"),
+      unlawful: g("unlawful"), misstated: no(g("misstated")) ? "" : g("misstated"),
+      rescheduled: num(g("rescheduled")), ghosted: yes(g("ghosted")), offerchg: g("offerchg"),
+      reached: s => STAGES.indexOf(round) >= STAGES.indexOf(s) && round!=="" };
+  });
+}
+
+/* ---------- render: stats ---------- */
+function renderStats(rows){
+  const n = rows.length, responded = rows.filter(r=>r.outcome!=="No response").length;
+  const interviews = rows.filter(r=>r.round).length;
+  const reach = STAGES.map(s=>rows.filter(r=>r.reached(s)).length);
+  let stall = null;
+  for(let i=0;i<STAGES.length-1;i++){
+    if(reach[i] >= 3){ const rate = reach[i+1]/reach[i]; if(!stall || rate < stall.rate) stall = {from:STAGES[i], rate}; }
+  }
+  const weeks = weekly(rows), last = weeks.slice(-4), avg = last.length ? Math.round(last.reduce((a,w)=>a+w.n,0)/last.length) : 0;
+  $("#stats").innerHTML = [
+    [n,"applications sent"],[pct(responded,n)+"%","heard back at all"],[interviews,"reached an interview"],
+    [stall ? pct(stall.rate*reach[STAGES.indexOf(stall.from)],reach[STAGES.indexOf(stall.from)])+"%" : "–", stall ? `advance past ${stall.from.toLowerCase()}: your stall point` : "not enough rounds yet", true],
+    [avg, avg>=FLOOR ? "per week lately: on pace" : `per week lately: below the floor of ${FLOOR}`]
+  ].map(([v,l,hl])=>`<div class="card stat${hl?" hl":""}"><div class="n">${esc(v)}</div><div class="l">${esc(l)}</div></div>`).join("");
+}
+
+/* ---------- render: sankey ---------- */
+function renderSankey(rows){
+  const svg = $("#sankey"), W = 1000, H = 440, nodeW = 14, pad = 16;
+  const N = rows.length;
+  const nodes = [], links = [];
+  const add = (id,label,col,kind) => { nodes.push({id,label,col,kind,in:0,out:0}); return id; };
+  add("applied",`Applied`,0,"main");
+  const noresp = rows.filter(r=>r.outcome==="No response").length;
+  const rejPre = rows.filter(r=>!r.round && r.outcome!=="No response").length;
+  add("noresp","No response",1,"dead"); add("rejpre","Closed before interview",1,"closed");
+  links.push(["applied","noresp",noresp],["applied","rejpre",rejPre]);
+  let prev = "applied";
+  STAGES.forEach((s,i)=>{
+    const reached = rows.filter(r=>r.reached(s)).length;
+    if(!reached) return;
+    const id = "s"+i; add(id,s,i+1,s==="Offer"?"ok":"main"); links.push([prev,id,reached]);
+    if(s!=="Offer"){
+      const stopped = rows.filter(r=>r.round===s);
+      const closed = stopped.filter(r=>r.outcome!=="Active").length, active = stopped.length-closed;
+      if(closed){ add(id+"c",`Closed at ${s.toLowerCase()}`,i+2,"closed"); links.push([id,id+"c",closed]); }
+      if(active){ add(id+"a",`Active at ${s.toLowerCase()}`,i+2,"active"); links.push([id,id+"a",active]); }
+    }
+    prev = id;
+  });
+  const byId = Object.fromEntries(nodes.map(n=>[n.id,n]));
+  links.forEach(([a,b,v])=>{ byId[a].out+=v; byId[b].in+=v; });
+  nodes.forEach(n=>n.v = Math.max(n.in,n.out));
+  const cols = Math.max(...nodes.map(n=>n.col))+1;
+  const colX = c => 10 + c*((W-200)/(cols-1));
+  const maxCount = Math.max(...Array.from({length:cols},(_,c)=>nodes.filter(n=>n.col===c).length));
+  const k = (H - 20 - (maxCount-1)*pad) / N;
+  // Main flow runs along the top; each column's closed/active ends sit below
+  // the previous column's, so labels never collide with the next column.
+  let floor = 0;
+  for(let c=0;c<cols;c++){
+    const col = nodes.filter(n=>n.col===c);
+    const isMain = n => n.kind==="main"||n.kind==="ok";
+    col.sort((a,b)=>(isMain(a)?0:1)-(isMain(b)?0:1));
+    let y = 10;
+    col.forEach(n=>{
+      if(!isMain(n) && c>1) y = Math.max(y, floor);
+      n.x=colX(c); n.y=y; n.h=Math.max(2,n.v*k); n.so=0; n.ti=0; y+=n.h+pad;
+      if(!isMain(n) && c>1) floor = y + 4;
+    });
+  }
+  links.sort((p,q)=>byId[p[1]].y-byId[q[1]].y);
+  const color = {main:css("--flow"),ok:css("--flow-ok"),dead:css("--flow-3"),closed:css("--flow-2"),active:css("--flow-ok")};
+  let out = "";
+  links.forEach(([a,b,v])=>{
+    const s=byId[a], t=byId[b], w=Math.max(1,v*k);
+    const y0=s.y+s.so+w/2, y1=t.y+t.ti+w/2; s.so+=w; t.ti+=w;
+    const x0=s.x+nodeW, x1=t.x, mx=(x0+x1)/2;
+    out += `<path d="M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}" fill="none" stroke="${color[t.kind]}" stroke-opacity=".38" stroke-width="${w}"><title>${esc(s.label)} → ${esc(t.label)}: ${v}</title></path>`;
+  });
+  nodes.forEach(n=>{
+    out += `<rect x="${n.x}" y="${n.y}" width="${nodeW}" height="${n.h}" rx="3" fill="${color[n.kind]}"/>`;
+    out += `<text x="${n.x+nodeW+8}" y="${n.y+n.h/2}" dominant-baseline="middle" font-size="13" fill="${css("--ink")}"><tspan font-weight="600">${esc(n.label)}</tspan><tspan fill="${css("--ink-2")}"> ${n.v} · ${pct(n.v,N)}%</tspan></text>`;
+  });
+  svg.innerHTML = out;
+}
+
+/* ---------- render: lanes ---------- */
+let convertBy = "family";
+function renderLanes(rows){
+  const key = convertBy, groups = {};
+  rows.forEach(r=>{ const k = r[key] || "Unlabelled"; const f = groups[k] ||= {n:0,iv:0}; f.n++; if(r.round) f.iv++; });
+  const order = key==="level" ? LEVELS : null;
+  const list = Object.entries(groups).sort((a,b)=> order ? order.indexOf(a[0])-order.indexOf(b[0]) : (b[1].iv/b[1].n - a[1].iv/a[1].n) || b[1].n-a[1].n);
+  document.querySelectorAll("#convertby button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.by===key));
+  $("#lanes").innerHTML = `<tr><th>${key==="level"?"Level":"Lane"}</th><th>Sent</th><th>Got an interview</th><th></th></tr>` +
+    list.map(([k,f])=>`<tr><td>${esc(k)}</td><td>${f.n}</td><td>${pct(f.iv,f.n)}%${f.n<8?` <span class="small muted">(small sample)</span>`:""}</td><td style="width:35%"><div class="bar"><i style="width:${pct(f.iv,f.n)}%"></i></div></td></tr>`).join("");
+  const guessing = lanesGuessed && key==="family";
+  $("#lanenote").textContent = key==="level" ? "Levels are read from seniority words in your job titles."
+    : guessing ? "Your tracker has no lane column, so lanes are grouped from words that repeat in your job titles. Edit them below if they don't match how you think about your search." : "Lanes come from your tracker's role family column.";
+  $("#laneedit").hidden = !guessing;
+  if(guessing && document.activeElement !== $("#lanerules")) $("#lanerules").value = rulesToText(laneRules||[]);
+}
+function reassignLanes(rules){
+  laneRules = rules; currentRows.forEach(r=>r.family = laneFor(rules, r.title)); renderLanes(currentRows);
+}
+document.addEventListener("click", e=>{
+  const by = e.target.closest("#convertby button"); if(by){ convertBy = by.dataset.by; renderLanes(currentRows); }
+  if(e.target.id==="laneapply"){ const rules = textToRules($("#lanerules").value); try{ localStorage.setItem("mirror-lanes", JSON.stringify(rules)); }catch{} reassignLanes(rules); }
+  if(e.target.id==="lanereset"){ try{ localStorage.removeItem("mirror-lanes"); }catch{} reassignLanes(autoLanes(currentRows.map(r=>r.title))); $("#lanerules").value = rulesToText(laneRules); }
+});
+
+/* ---------- render: pace ---------- */
+function weekly(rows){
+  const dated = rows.filter(r=>r.date).sort((a,b)=>a.date-b.date);
+  if(!dated.length) return [];
+  const w0 = dated[0].date.getTime(), weeks = [];
+  dated.forEach(r=>{ const i = Math.floor((r.date.getTime()-w0)/(7*864e5)); (weeks[i] ||= {n:0,iv:0}).n++; if(r.round) weeks[i].iv++; });
+  for(let i=0;i<weeks.length;i++) weeks[i] ||= {n:0,iv:0};
+  return weeks.map((w,i)=>({...w,label:new Date(w0+i*7*864e5)}));
+}
+function renderPace(rows){
+  const weeks = weekly(rows), svg = $("#pace"), W=480, H=210, b=24, l=28, r=22;
+  if(!weeks.length){ svg.innerHTML=""; return; }
+  const max = Math.max(FLOOR+2,...weeks.map(w=>w.n)), bw = (W-l-r)/weeks.length;
+  const y = v => H-b - v*(H-b-10)/max;
+  let out = `<line x1="${l}" x2="${W-r}" y1="${y(FLOOR)}" y2="${y(FLOOR)}" stroke="${css("--gold")}" stroke-dasharray="5 4"/><text x="${l-6}" y="${y(FLOOR)}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="${css("--ink-2")}">${FLOOR}</text>`;
+  weeks.forEach((w,i)=>{
+    const x = l + i*bw + 2, h = H-b-y(w.n);
+    out += `<rect x="${x}" y="${y(w.n)}" width="${Math.max(2,bw-4)}" height="${h}" rx="3" fill="${w.n>=FLOOR?css("--ember"):css("--flow-3")}"><title>Week of ${w.label.toLocaleDateString(undefined,{month:"short",day:"numeric"})}: ${w.n} sent</title></rect>`;
+    if(i%2===0) out += `<text x="${x+bw/2-2}" y="${H-6}" text-anchor="middle" font-size="10" fill="${css("--ink-2")}">${w.label.toLocaleDateString(undefined,{month:"short",day:"numeric"})}</text>`;
+  });
+  svg.innerHTML = out;
+}
+
+/* ---------- render: posting watch ---------- */
+// Every flag is an observation from the user's own tracker (or public WARN filings),
+// worded as a fact with its evidence. Never a verdict about the company.
+const STAGE_ORDER = ["Posting","Recruiter","Process","Offer"];
+const FLAGS = {
+  old:      {stage:"Posting",   c:"warn", t:"Open 60+ days",            d:"A posting was 60 or more days old when you saw it"},
+  repost:   {stage:"Posting",   c:"bad",  t:"Reposted 2+ times",        d:"The same role keeps coming back"},
+  nopay:    {stage:"Posting",   c:"warn", t:"No pay band",              d:"California requires a pay scale in postings for employers with 15+ employees"},
+  agencies: {stage:"Posting",   c:"warn", t:"Shopped by 3+ agencies",   d:"You saw this company's roles through three or more recruiting agencies"},
+  layoffs:  {stage:"Posting",   c:"bad",  t:"Recent layoffs filed",     d:"A WARN layoff notice matches this company name. Check it is the same employer."},
+  client:   {stage:"Recruiter", c:"warn", t:"Client not named",         d:"A recruiter would not say who the role is for"},
+  unapproved:{stage:"Recruiter",c:"bad",  t:"Submitted without asking", d:"A recruiter sent your resume without your approval. Duplicate submissions can knock you out."},
+  scam:     {stage:"Recruiter", c:"bad",  t:"Scam patterns",            d:"Messaging-only contact, personal email domains, or requests for ID, bank details, or equipment purchases"},
+  long:     {stage:"Process",   c:"warn", t:"Long process",             d:"5+ rounds, 6+ interview hours, a take-home over 4 hours, or 6+ weeks to a decision"},
+  unlawful: {stage:"Process",   c:"bad",  t:"Possibly unlawful question",d:"Age, family, marital status, religion, national origin, disability, or salary history (banned in California)"},
+  misstated:{stage:"Process",   c:"bad",  t:"Resume misstated",         d:"An interviewer attributed something to your resume that it does not say"},
+  panel:    {stage:"Process",   c:"warn", t:"Homogeneous panel",        d:"Your own observation of the panel as a whole, never about a named person"},
+  resched:  {stage:"Process",   c:"warn", t:"Rescheduled 2+ times",     d:"The company moved your interviews repeatedly"},
+  ghosted:  {stage:"Process",   c:"bad",  t:"Ghosted after final",      d:"No word after your last interview"},
+  silent:   {stage:"Process",   c:"bad",  t:"Silent 30+ days",          d:"Every application here got no response after 30 days"},
+  offer:    {stage:"Offer",     c:"bad",  t:"Offer changed",            d:"Lower band or title than posted, a short deadline, or pressure to name your number"}
+};
+const normCo = s => s.toLowerCase().replace(/\b(dba|d\/b\/a)\b.*/,"").replace(/[^a-z0-9& ]+/g," ")
+  .replace(/\b(inc|llc|l l c|corp|corporation|co|company|ltd|lp|llp|plc|holdings|group|the|usa|us|na)\b/g," ").replace(/\s+/g," ").trim();
+function warnFor(company){
+  const k = normCo(company); if(k.length < 3) return null;
+  if(warnData.companies[k]) return warnData.companies[k];
+  // Allow "Acme" to match "Acme Robotics" only on a whole-word prefix, and only for names long enough to be distinctive.
+  if(k.length >= 5){ const hit = Object.keys(warnData.companies).find(w => w.startsWith(k+" ") || k.startsWith(w+" ")); if(hit) return warnData.companies[hit]; }
+  return null;
+}
+function renderWatch(rows){
+  const now = Date.now(), cos = {};
+  rows.forEach(r=>{ const c = cos[normCo(r.company) || r.company] ||= {name:r.company,n:0,maxAge:0,reposts:0,nopay:0,silentOld:0,dated:0,titles:new Set(),resp:0,sources:new Set(),ev:{}};
+    const ev = (f,txt) => { (c.ev[f] ||= new Set()).add(txt); };
+    c.n++; c.titles.add(r.title); c.maxAge = Math.max(c.maxAge, r.ageDays||0); c.reposts = Math.max(c.reposts, r.reposts);
+    if(r.source && !/linkedin|indeed|referr|company site|careers|direct/i.test(r.source)) c.sources.add(r.source);
+    if(r.comp==="") c.nopay++; if(r.outcome!=="No response") c.resp++;
+    if(r.date && now - r.date.getTime() > 30*864e5){ c.dated++; if(r.outcome==="No response") c.silentOld++; }
+    if(r.clientHidden) ev("client", r.source || "recruiter");
+    if(r.unapproved) ev("unapproved", r.source || "recruiter");
+    if(r.scam) ev("scam", r.scam);
+    const span = r.first && r.decision ? Math.round((r.decision-r.first)/864e5) : 0;
+    const long = [r.rounds>=5&&`${r.rounds} rounds`, r.hours>=6&&`${r.hours} interview hours`, r.takehome>4&&`${r.takehome}-hour take-home`, span>=42&&`${Math.round(span/7)} weeks to decide`].filter(Boolean);
+    if(long.length) ev("long", long.join(", "));
+    if(r.unlawful) ev("unlawful", r.unlawful);
+    if(r.misstated) ev("misstated", /^(y|yes|true)$/i.test(r.misstated) ? "yes" : r.misstated);
+    if(/\ball\b|only|no women|no men/i.test(r.panel)) ev("panel", r.panel + (r.interviewers ? ` (${r.interviewers} interviewers)` : ""));
+    if(r.rescheduled>=2) ev("resched", `${r.rescheduled} times`);
+    if(r.ghosted) ev("ghosted", r.round ? "after reaching " + r.round.toLowerCase() : "after the last interview");
+    if(r.offerchg) ev("offer", r.offerchg);
+  });
+  const list = Object.entries(cos).map(([k,c])=>{
+    const f = {...Object.fromEntries(Object.entries(c.ev).map(([x,s])=>[x,[...s].join("; ")]))};
+    if(c.maxAge>=60) f.old = `${c.maxAge} days`;
+    if(c.reposts>=2) f.repost = `${c.reposts} times`;
+    if(c.nopay===c.n) f.nopay = "on every posting you saw";
+    if(c.sources.size>=3) f.agencies = [...c.sources].join(", ");
+    if(c.dated>=2 && c.silentOld===c.dated) f.silent = `${c.dated} of ${c.dated} applications`;
+    const w = warnFor(c.name); if(w) f.layoffs = `${w[0]}: ${w[1]} notice${w[1]>1?"s":""}, ${w[2]} employees, latest ${w[3]}${w[4].length?" ("+w[4].join(", ")+")":""}`;
+    return {k:c.name,c,f};
+  }).sort((a,b)=>Object.keys(b.f).length-Object.keys(a.f).length || b.c.n-a.c.n);
+  $("#flagkey").innerHTML = `<div>${STAGE_ORDER.map(s=>`<span class="stagekey">${s}</span>${Object.values(FLAGS).filter(f=>f.stage===s).map(f=>`<span class="flag ${f.c}" title="${esc(f.d)}">${f.t}</span>`).join("")}`).join("")}</div>`;
+  $("#warnnote").innerHTML = `Layoff check uses ${esc(warnData.source)}, ${esc(warnData.range)}. A name match is a lead to verify, not proof it is the same employer.`;
+  // Small pills in stage order; the evidence sits in a tooltip and a collapsed list (tooltips don't work on touch).
+  const cell = f => {
+    const items = Object.entries(f).sort((a,b)=>STAGE_ORDER.indexOf(FLAGS[a[0]].stage)-STAGE_ORDER.indexOf(FLAGS[b[0]].stage));
+    if(!items.length) return `<span class="muted small">Nothing unusual</span>`;
+    return items.map(([x,e])=>`<span class="flag ${FLAGS[x].c}" title="${esc(e)}">${FLAGS[x].t}</span>`).join("") +
+      `<details class="ev"><summary>details</summary><ul>${items.map(([x,e])=>`<li><b>${FLAGS[x].t}:</b> ${esc(e)}</li>`).join("")}</ul></details>`;
+  };
+  $("#watch").innerHTML = `<tr><th>Company</th><th>Applied</th><th>Heard back</th><th>What you observed</th></tr>` +
+    list.map(({k,c,f})=>`<tr><td><b>${esc(k)}</b><div class="small muted">${esc([...c.titles].filter(Boolean).join(", "))}</div></td><td>${c.n}</td><td>${c.resp}/${c.n}</td><td>${cell(f)}</td></tr>`).join("");
+}
+
+/* ---------- playbooks ---------- */
+let current = 0;
+function renderPlaybooks(){
+  $("#pblist").innerHTML = PLAYBOOKS.map((p,i)=>`<button class="card pb" aria-pressed="${i===current}" data-i="${i}"><div class="s">${esc(p.section)}</div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.blurb)}</div></button>`).join("");
+  const p = PLAYBOOKS[current];
+  $("#pbtitle").textContent = p.title; $("#pbdesc").textContent = p.blurb; $("#pbtext").textContent = p.text;
+}
+$("#pblist").addEventListener("click", e=>{ const b = e.target.closest(".pb"); if(!b) return; current = +b.dataset.i; renderPlaybooks(); });
+$("#copy").addEventListener("click", async ()=>{
+  const btn = $("#copy");
+  try { await navigator.clipboard.writeText(PLAYBOOKS[current].text); btn.textContent = "Copied"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("#pbtext")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Selected: press Copy"; }
+  setTimeout(()=>btn.textContent="Copy playbook", 1800);
+});
+
+/* ---------- wiring ---------- */
+// Many trackers keep applications on one sheet and responses or rounds on others.
+// Fill outcome and furthest round onto each application from any other sheet that
+// names the same company (and role, when the role disambiguates).
+function mergeOutcomes(rows, extras){
+  let filled = 0; const used = [];
+  extras.forEach(({name, raw})=>{
+    const other = normalise(raw).filter(r=>r.company!=="Unknown");
+    if(!other.length) return;
+    const byKey = {}, byCo = {};
+    other.forEach(o=>{ const co = normCo(o.company); (byCo[co] ||= []).push(o); byKey[co+"|"+o.title.toLowerCase()] = o; });
+    let n = 0;
+    rows.forEach(r=>{
+      const co = normCo(r.company);
+      const o = byKey[co+"|"+r.title.toLowerCase()] || (byCo[co] && byCo[co].length===1 ? byCo[co][0] : null);
+      if(!o) return;
+      const better = STAGES.indexOf(o.round) > STAGES.indexOf(r.round);
+      if(better){ r.round = o.round; const rr = o.round; r.reached = s => STAGES.indexOf(rr) >= STAGES.indexOf(s); }
+      if(o.outcome!=="No response" && (r.outcome==="No response" || r.outcome==="Active" || better)) r.outcome = o.outcome;
+      if(better || o.outcome!=="No response") n++;
+    });
+    if(n){ filled += n; used.push(name); }
+  });
+  return {filled, used};
+}
+let currentRows = [];
+function load(raw, label, extras=[]){
+  warnData = label.startsWith("the sample") ? SAMPLE_WARN : WARN;
+  const rows = normalise(raw);
+  const merged = extras.length ? mergeOutcomes(rows, extras) : {filled:0, used:[]};
+  if(lanesGuessed){
+    let saved = null; try{ saved = JSON.parse(localStorage.getItem("mirror-lanes")||"null"); }catch{}
+    laneRules = saved && saved.length ? saved : autoLanes(rows.map(r=>r.title));
+    rows.forEach(r=>r.family = laneFor(laneRules, r.title));
+  }
+  currentRows = rows;
+  if(!rows.length){ $("#loadmsg").textContent = "No rows found. Check the first line holds column names."; return; }
+  $("#banner").innerHTML = `Showing <b>${esc(label)}</b>: ${rows.length} applications. ${label.startsWith("the sample")?"Every company in it is fictional.":"This stays in your browser."}${merged.filled ? ` Outcomes and rounds for ${merged.filled} applications filled in from ${merged.used.map(esc).join(", ")}.` : ""} <a href="#" id="toload">Load your own</a>`;
+  $("#toload").onclick = e=>{ e.preventDefault(); show("load"); };
+  renderStats(rows); renderSankey(rows); renderLanes(rows); renderPace(rows); renderWatch(rows);
+  $("#loadmsg").textContent = `Loaded ${rows.length} rows.`;
+}
+function show(tab){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===tab));
+  document.querySelectorAll("[data-panel]").forEach(p=>p.hidden = p.dataset.panel!==tab);
+  try{ localStorage.setItem("mirror-tab", tab); }catch{}
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.tab)));
+$("#sample").onclick = ()=>{ load(sampleRows(),"the sample search"); show("mirror"); };
+$("#template").onclick = ()=>{ $("#paste").value = TEMPLATE; };
+$("#loadpaste").onclick = ()=>{ const v = $("#paste").value.trim(); if(v){ load(parseCSV(v),"your pasted tracker"); show("mirror"); } };
+/* ---------- spreadsheets ---------- */
+// Score a candidate header row by how many tracker fields its cells name.
+function headerScore(cells){
+  const lc = cells.map(c=>String(c)).filter(c=>c.trim() && c.length <= 40);
+  return Object.values(FIELDS).filter(names=>names.some(n=>lc.some(c=>namesField(c,n)))).length;
+}
+// Turn one sheet into row objects, finding the header row in the first 15 rows.
+function sheetRows(ws){
+  const grid = XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false,dateNF:"yyyy-mm-dd",blankrows:false});
+  let best = 0, score = -1;
+  grid.slice(0,15).forEach((r,i)=>{ const s = headerScore(r); if(s > score){ score = s; best = i; } });
+  const head = (grid[best]||[]).map((h,i)=>String(h).replace(/\s+/g," ").trim() || `Column ${i+1}`);
+  const rows = grid.slice(best+1).filter(r=>r.some(v=>String(v).trim())).map(r=>Object.fromEntries(head.map((h,i)=>[h,String(r[i]??"").trim()])));
+  return {rows, score};
+}
+let workbook = null, workbookName = "";
+function loadSheet(name){
+  const {rows} = sheetRows(workbook.Sheets[name]);
+  const extras = workbook.SheetNames.filter(n=>n!==name).map(n=>({name:n, raw:sheetRows(workbook.Sheets[n]).rows}))
+    // Only sheets that actually record outcomes or rounds may fill them in.
+    .filter(x=>x.raw.length && Object.keys(x.raw[0]).some(h=>/^(outcome|result|pipeline status|application status|rounds reached|furthest round|stage)$/i.test(h.trim())));
+  load(rows, `${workbookName} · ${name}`, extras); show("mirror");
+}
+function openWorkbook(buf, name){
+  if(typeof XLSX === "undefined"){ $("#loadmsg").textContent = "Spreadsheet support needs an internet connection. Export the sheet as CSV instead."; return; }
+  try { workbook = XLSX.read(buf,{type:"array",cellDates:true}); }
+  catch { $("#loadmsg").textContent = "That file could not be read as a spreadsheet."; return; }
+  workbookName = name;
+  const ranked = workbook.SheetNames.map(n=>{ const s = sheetRows(workbook.Sheets[n]); return {n, score:s.score, count:s.rows.length}; })
+    .sort((a,b)=>b.score-a.score || b.count-a.count);
+  // Treat sheets within one point of the best header match as equally tracker-like,
+  // and among those take the longest list: that is usually every application sent.
+  const top = ranked[0] ? ranked[0].score : 0;
+  ranked.sort((a,b)=>((b.score>=top-1)-(a.score>=top-1)) || b.count-a.count);
+  $("#sheet").innerHTML = ranked.map(s=>`<option value="${esc(s.n)}">${esc(s.n)} (${s.count} rows)</option>`).join("");
+  $("#sheetpick").hidden = workbook.SheetNames.length < 2;
+  $("#sheetwhy").textContent = workbook.SheetNames.length > 1 ? "Picked the sheet that looks most like a tracker. Switch if it guessed wrong." : "";
+  loadSheet(ranked[0].n);
+}
+$("#sheet").onchange = e=>loadSheet(e.target.value);
+$("#file").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  if(/\.csv$/i.test(f.name) || f.type==="text/csv"){
+    $("#sheetpick").hidden = true;
+    fr.onload = ()=>{ load(parseCSV(fr.result), f.name); show("mirror"); }; fr.readAsText(f);
+  } else {
+    fr.onload = ()=>openWorkbook(new Uint8Array(fr.result), f.name); fr.readAsArrayBuffer(f);
+  }
+};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>$("#sample") && load(lastRaw, lastLabel, lastExtras));
+let lastRaw, lastLabel, lastExtras; const _load = load; load = (raw,label,extras=[])=>{ lastRaw=raw; lastLabel=label; lastExtras=extras; _load(raw,label,extras); };
+renderPlaybooks();
+load(sampleRows(),"the sample search");
+try{ const t = localStorage.getItem("mirror-tab"); if(t) show(t); }catch{}
+</script>

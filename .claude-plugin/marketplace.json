@@ -1,0 +1,11 @@
+{
+  "name": "make-the-mirror-true",
+  "owner": { "name": "Caryn Moore" },
+  "plugins": [
+    {
+      "name": "make-the-mirror-true",
+      "source": "./",
+      "description": "Job search skills from the talk Getting in Touch with Your Inner Narcissist."
+    }
+  ]
+}
