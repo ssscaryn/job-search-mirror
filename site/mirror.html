@@ -112,6 +112,13 @@ ul.bank li{margin-bottom:8px}
 .overlay .card{max-width:720px;width:100%;margin-top:4vh}
 .step{font-family:Fraunces,Georgia,serif;font-weight:700;color:var(--ember);margin-right:6px}
 #flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;box-shadow:var(--shadow);z-index:30;max-width:calc(100% - 32px)}
+.welcome{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:12px}
+.welcome button{text-align:left;font:inherit;color:inherit;cursor:pointer}
+.welcome button .t{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.15rem;display:block;margin-bottom:4px}
+.checklist{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem;margin-top:6px}
+.checklist span::before{content:"○ ";color:var(--ink-2)}
+.checklist span.done{color:var(--ink-2);text-decoration:line-through}
+.checklist span.done::before{content:"● ";color:var(--sage);text-decoration:none;display:inline-block}
 footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid var(--line);padding-top:16px}
 </style>
 
@@ -132,6 +139,19 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
     <div class="databar">Your data stays in this browser. <button class="btn" id="exportbtn">Export backup</button><button class="btn" id="importbtn">Import backup</button><input type="file" id="importfile" accept=".json,application/json" hidden></div>
   </header>
 
+  <section class="card" id="welcome" hidden style="margin-bottom:18px">
+    <h2>Welcome. Where are you in your search?</h2>
+    <p class="muted" style="margin:0">Everything you add stays in this browser. You can change paths any time.</p>
+    <div class="welcome">
+      <button class="card" data-start="example"><span class="t">Show me an example</span><span class="small muted">Explore a fictional search first: funnel, red flags, debriefs.</span></button>
+      <button class="card" data-start="bring"><span class="t">I have a tracker already</span><span class="small muted">Upload your spreadsheet (Excel or CSV) and see your search as data.</span></button>
+      <button class="card" data-start="fresh"><span class="t">I'm just starting</span><span class="small muted">Add applications as you go. Takes 30 seconds each, works on a phone.</span></button>
+    </div>
+  </section>
+  <section class="card" id="checklist" hidden style="margin-bottom:18px;padding:14px 20px">
+    <b>Next steps</b>
+    <div class="checklist" id="checkitems"></div>
+  </section>
   <div id="banner" class="note small" style="margin-bottom:18px"></div>
 
   <!-- MIRROR -->
@@ -247,7 +267,23 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
 
   <!-- LOAD -->
   <div data-panel="load" hidden>
-    <section class="card" style="margin-top:0">
+    <section class="card" style="margin-top:0" id="quickadd">
+      <h2>Add an application</h2>
+      <p class="muted" style="margin:0 0 12px">For applications you send from now on. Rows added here join whatever tracker you've loaded.</p>
+      <div class="grid form">
+        <div><label class="f" for="qacompany">Company</label><input class="t" id="qacompany" autocomplete="off"></div>
+        <div><label class="f" for="qatitle">Role title</label><input class="t" id="qatitle" autocomplete="off"></div>
+        <div><label class="f" for="qadate">Date applied</label><input class="t" id="qadate" type="date"></div>
+        <div><label class="f" for="qaage">Posting age</label><input class="t" id="qaage" placeholder="e.g. 3 days, reposted 2 weeks"></div>
+        <div><label class="f" for="qacomp">Pay band</label><input class="t" id="qacomp" placeholder="Leave blank if not listed"></div>
+        <div><label class="f" for="qasource">Source</label><input class="t" id="qasource" placeholder="LinkedIn, referral, recruiter name…"></div>
+        <div><label class="f" for="qaround">Furthest round</label><select class="t" id="qaround"><option value="">None yet</option><option>Screener</option><option>Hiring manager</option><option>Panel</option></select></div>
+        <div><label class="f" for="qaoutcome">Status</label><select class="t" id="qaoutcome"><option value="No response">Waiting to hear</option><option value="Active">Interviewing</option><option value="Rejected">Rejected</option><option value="Offer">Offer</option><option value="Withdrawn">Withdrew</option></select></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="qaadd">Add application</button><span class="small muted" id="qamsg"></span></div>
+      <div id="qalist" style="margin-top:12px"></div>
+    </section>
+    <section class="card">
       <h2>Load your tracker</h2>
       <p class="muted" style="margin:0 0 12px">Choose your tracker file: Excel (.xlsx, .xls), OpenDocument (.ods), or CSV from Google Sheets, Numbers, or Notion. You can also paste CSV below. Column names are matched loosely, so your own format usually works.</p>
       <div class="row">
@@ -478,6 +514,7 @@ const textToRules = text => text.split("\n").map(l=>l.split(":")).filter(p=>p.le
   .map(([name,...rest])=>({name:name.trim(), words:rest.join(":").split(",").map(w=>w.trim().toLowerCase()).filter(Boolean)}));
 let laneRules = null;
 let lanesGuessed = false;
+let lastPick = {};
 function normalise(raw){
   if(!raw.length) return [];
   const keys = [...new Set(raw.flatMap(r=>Object.keys(r)))];
@@ -486,6 +523,7 @@ function normalise(raw){
     pick[f] = names.map(n=>keys.find(k=>k.trim().toLowerCase()===n)).find(Boolean) || names.map(n=>keys.find(k=>namesField(k,n))).find(Boolean);
   }
   lanesGuessed = !pick.family;
+  lastPick = pick;
   return raw.map(r=>{
     const g = f => pick[f] ? String(r[pick[f]] ?? "") : "";
     // Rounds: words ("hiring manager"), numbers ("3" rounds reached), or hints inside outcome text.
@@ -830,6 +868,7 @@ function mergeOutcomes(rows, extras){
 function load(raw, label, extras=[], opts={}){
   warnData = label.startsWith("the sample") ? SAMPLE_WARN : WARN;
   const rows = normalise(raw);
+  mainPick = {...lastPick};
   const merged = extras.length ? mergeOutcomes(rows, extras) : {filled:0, used:[], added:0, addedFrom:[]};
   if(lanesGuessed){
     let saved = null; try{ saved = JSON.parse(localStorage.getItem("mirror-lanes")||"null"); }catch{}
@@ -837,14 +876,67 @@ function load(raw, label, extras=[], opts={}){
     rows.forEach(r=>r.family = laneFor(laneRules, r.title));
   }
   currentRows = rows;
-  if(!rows.length){ $("#loadmsg").textContent = "No rows found. Check the first line holds column names."; return; }
+  if(!rows.length && !opts.allowEmpty){ $("#loadmsg").textContent = "No rows found. Check the first line holds column names."; return; }
+  if(!rows.length){
+    $("#banner").innerHTML = `Your tracker is empty. <a href="#" id="toload">Add your first application</a>`;
+    $("#toload").onclick = e=>{ e.preventDefault(); show("load"); };
+    $("#stats").innerHTML = `<div class="card stat"><div class="n">0</div><div class="l">applications so far. Your funnel, pace, and red flags appear as you add them.</div></div>`;
+    $("#sankey").innerHTML = ""; $("#lanes").innerHTML = ""; $("#lanenote").textContent = ""; $("#pace").innerHTML = ""; renderWatch(rows);
+    if(opts.persist !== false && typeof Store !== "undefined") Store.set("tracker", {raw, label, extras});
+    renderAdded(); if(typeof renderChecklist === "function") renderChecklist();
+    return;
+  }
   $("#banner").innerHTML = `Showing <b>${esc(label)}</b>: ${rows.length} applications. ${label.startsWith("the sample")?"Every company in it is fictional.":"This stays in your browser."}${merged.filled ? ` Outcomes and rounds for ${merged.filled} applications filled in from ${merged.used.map(esc).join(", ")}.` : ""}${merged.added ? ` ${merged.added} more found only on ${merged.addedFrom.map(esc).join(", ")} were added.` : ""} <a href="#" id="toload">Load your own</a>`;
   $("#toload").onclick = e=>{ e.preventDefault(); show("load"); };
   renderStats(rows); renderSankey(rows); renderLanes(rows); renderPace(rows); renderWatch(rows);
   // Remember a real tracker between visits (never the sample).
   if(opts.persist !== false && !label.startsWith("the sample") && typeof Store !== "undefined") Store.set("tracker", {raw, label, extras});
   $("#loadmsg").textContent = `Loaded ${rows.length} rows.`;
+  renderAdded(); if(typeof renderChecklist === "function") renderChecklist();
 }
+
+/* ---------- quick-add ---------- */
+// New rows use the loaded tracker's own column names, so they read back the same way.
+let mainPick = {};
+const DEFAULT_HEADERS = {date:"Date applied", company:"Company", title:"Role title", age:"Posting age", comp:"Comp band", source:"Source", round:"Furthest round", outcome:"Outcome"};
+const isSample = () => !lastLabel || lastLabel.startsWith("the sample");
+function addApplication(){
+  const company = $("#qacompany").value.trim(), title = $("#qatitle").value.trim();
+  if(!company || !title){ $("#qamsg").textContent = "Add at least a company and a role title."; return; }
+  const values = {date: $("#qadate").value || localDate(), company, title, age: $("#qaage").value.trim(), comp: $("#qacomp").value.trim(),
+    source: $("#qasource").value.trim(), round: $("#qaround").value, outcome: $("#qaoutcome").value};
+  const sample = isSample();
+  const base = sample ? [] : (lastRaw || []).slice();
+  const pickNow = sample || !base.length ? {} : mainPick;
+  const row = {_addedHere: Math.random().toString(36).slice(2,10)};
+  for(const [f, v] of Object.entries(values)) row[pickNow[f] || DEFAULT_HEADERS[f]] = v;
+  base.push(row);
+  load(base, sample ? "your tracker" : lastLabel, sample ? [] : (lastExtras || []), {allowEmpty:true});
+  ["qacompany","qatitle","qaage","qacomp","qasource"].forEach(id=>$("#"+id).value = "");
+  $("#qaround").value = ""; $("#qaoutcome").value = "No response";
+  $("#qamsg").textContent = `Added ${company}.`; $("#qacompany").focus();
+}
+function renderAdded(){
+  const added = (lastRaw || []).filter(r=>r._addedHere);
+  if(isSample() || !added.length){ $("#qalist").innerHTML = ""; return; }
+  const val = (r, f) => r[mainPick[f]] ?? r[DEFAULT_HEADERS[f]] ?? "";
+  $("#qalist").innerHTML = `<div class="small muted" style="margin-bottom:4px">Added here (${added.length}). Rows from an uploaded file are edited in your spreadsheet.</div><div class="scroll"><table class="small"><tr><th>Date</th><th>Company</th><th>Role</th><th>Status</th><th></th></tr>` +
+    added.slice().reverse().map(r=>`<tr><td>${esc(val(r,"date"))}</td><td>${esc(val(r,"company"))}</td><td>${esc(val(r,"title"))}</td><td><select class="t" data-qa-status="${r._addedHere}" style="padding:4px 6px">${["No response","Active","Rejected","Offer","Withdrawn"].map(o=>`<option value="${o}" ${val(r,"outcome")===o?"selected":""}>${{"No response":"Waiting to hear","Active":"Interviewing","Rejected":"Rejected","Offer":"Offer","Withdrawn":"Withdrew"}[o]}</option>`).join("")}</select></td><td><button class="btn" data-qa-del="${r._addedHere}" style="padding:3px 8px">Remove</button></td></tr>`).join("") + `</table></div>`;
+}
+function editAdded(id, change){
+  const raw = (lastRaw || []).slice(); const i = raw.findIndex(r=>r._addedHere===id); if(i < 0) return;
+  if(change === null) raw.splice(i, 1); else raw[i] = {...raw[i], [mainPick.outcome || DEFAULT_HEADERS.outcome]: change};
+  load(raw, lastLabel, lastExtras || [], {allowEmpty:true});
+}
+const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+document.addEventListener("click", e=>{
+  if(e.target.id === "qaadd") addApplication();
+  if(e.target.dataset && e.target.dataset.qaDel){
+    const b = e.target; if(b.dataset.confirm !== "1"){ b.dataset.confirm = "1"; b.textContent = "Remove?"; return; }
+    editAdded(b.dataset.qaDel, null);
+  }
+});
+document.addEventListener("change", e=>{ if(e.target.dataset && e.target.dataset.qaStatus) editAdded(e.target.dataset.qaStatus, e.target.value); });
 function show(tab){
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===tab));
   document.querySelectorAll("[data-panel]").forEach(p=>p.hidden = p.dataset.panel!==tab);
@@ -1130,7 +1222,7 @@ const App = {
     this.questionsByMe = await Store.get("questionsByMe", []);
     this.standards = await Store.get("standards", "");
     const tracker = await Store.get("tracker", null);
-    if(tracker && tracker.raw && tracker.raw.length){ load(tracker.raw, tracker.label, tracker.extras || [], {persist:false}); }
+    if(tracker && Array.isArray(tracker.raw)){ load(tracker.raw, tracker.label, tracker.extras || [], {persist:false, allowEmpty:true}); }
     else if(currentRows.length){ renderWatch(currentRows); }
     renderInterviews(); renderBanks();
     $("#standards").value = this.standards;
@@ -1273,7 +1365,7 @@ async function runDebrief(){
     App.interviews.push(iv); await Store.set("interviews", App.interviews);
     fileIntoBanks(iv); await Store.set("questionsOfMe", App.questionsOfMe); await Store.set("questionsByMe", App.questionsByMe); await Store.set("stories", App.stories);
     $("#ivtranscript").value = ""; status.textContent = ""; Transcribe.reset(); pickedMe = null; $("#ivwho").hidden = true;
-    renderInterviews(); renderBanks(); renderWatch(currentRows);
+    renderInterviews(); renderBanks(); renderWatch(currentRows); renderChecklist();
     const first = $(`#ivlist details[data-id="${iv.id}"]`); if(first) first.open = true;
     flash("Debrief saved. Questions and stories were added to your banks.");
   }catch(e){
@@ -1395,10 +1487,42 @@ const Transcribe = {
   }
 };
 
+/* ---------- welcome + next steps ---------- */
+// First visit: pick a path. After that, a short checklist until the basics are done.
+async function renderWelcome(){
+  const welcomed = await Store.get("welcomed", "");
+  const tracker = await Store.get("tracker", null);
+  $("#welcome").hidden = !!(welcomed || (tracker && tracker.raw));
+}
+function renderChecklist(){
+  if(typeof isSample !== "function") return;
+  const items = [
+    {done: !isSample() && currentRows.length > 0, label: "Add or upload your applications", tab: "load"},
+    {done: (App.standards || "").trim().length > 20, label: "Write down the claims you can defend", tab: "banks"},
+    {done: App.interviews.length > 0, label: "Debrief an interview", tab: "interviews"}
+  ];
+  const box = $("#checklist");
+  box.hidden = !$("#welcome").hidden || isSample() || items.every(i=>i.done);
+  $("#checkitems").innerHTML = items.map(i=>`<span class="${i.done?"done":""}">${i.done ? esc(i.label) : `<a href="#" data-goto="${i.tab}">${esc(i.label)}</a>`}</span>`).join("");
+}
+async function startPath(path){
+  await Store.set("welcomed", path);
+  $("#welcome").hidden = true;
+  if(path === "example"){ show("mirror"); flash("This is a fictional search. Load your own any time from Load tracker."); }
+  if(path === "bring"){ show("load"); $("#file").focus(); }
+  if(path === "fresh"){
+    if(isSample()) load([], "your tracker", [], {allowEmpty:true});
+    show("load"); $("#qacompany").focus();
+  }
+  renderChecklist();
+}
+
 /* ---------- wiring ---------- */
 document.addEventListener("click", async e=>{
   const t = e.target;
   if(t.id === "ivrun") runDebrief();
+  const start = t.closest && t.closest("[data-start]"); if(start) startPath(start.dataset.start);
+  if(t.dataset && t.dataset.goto){ e.preventDefault(); show(t.dataset.goto); }
   if(t.dataset && "me" in t.dataset && t.closest("#ivwho")){ pickedMe = t.dataset.me; $("#ivwho").hidden = true; runDebrief(); }
   if(t.id === "ivlocal") Transcribe.local();
   if(t.id === "ivchatbot") Transcribe.chatbot();
@@ -1446,13 +1570,15 @@ document.addEventListener("change", async e=>{
 });
 document.addEventListener("input", e=>{
   if(e.target.id === "ivtranscript"){ pickedMe = null; $("#ivwho").hidden = true; }
-  if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); }, 500); }
+  if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); renderChecklist(); }, 500); }
 });
 (async () => {
   $("#ivdate").value = today();
   AI.inClaude().then(yes=>{ $("#aimode").textContent = yes ? "Runs on your own Claude account, right here." : "Works with any AI: the app gives you a prompt to paste into ChatGPT, Gemini, or Claude, then files the answer you paste back."; });
   if(!(await Store.persistent())) flash("This browser won't keep your data between visits. Use Export to save a backup.");
   await App.reload();
+  await renderWelcome(); renderChecklist();
+  $("#qadate").value = today();
 })();
 
 </script>

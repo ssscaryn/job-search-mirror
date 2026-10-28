@@ -217,7 +217,7 @@ const App = {
     this.questionsByMe = await Store.get("questionsByMe", []);
     this.standards = await Store.get("standards", "");
     const tracker = await Store.get("tracker", null);
-    if(tracker && tracker.raw && tracker.raw.length){ load(tracker.raw, tracker.label, tracker.extras || [], {persist:false}); }
+    if(tracker && Array.isArray(tracker.raw)){ load(tracker.raw, tracker.label, tracker.extras || [], {persist:false, allowEmpty:true}); }
     else if(currentRows.length){ renderWatch(currentRows); }
     renderInterviews(); renderBanks();
     $("#standards").value = this.standards;
@@ -360,7 +360,7 @@ async function runDebrief(){
     App.interviews.push(iv); await Store.set("interviews", App.interviews);
     fileIntoBanks(iv); await Store.set("questionsOfMe", App.questionsOfMe); await Store.set("questionsByMe", App.questionsByMe); await Store.set("stories", App.stories);
     $("#ivtranscript").value = ""; status.textContent = ""; Transcribe.reset(); pickedMe = null; $("#ivwho").hidden = true;
-    renderInterviews(); renderBanks(); renderWatch(currentRows);
+    renderInterviews(); renderBanks(); renderWatch(currentRows); renderChecklist();
     const first = $(`#ivlist details[data-id="${iv.id}"]`); if(first) first.open = true;
     flash("Debrief saved. Questions and stories were added to your banks.");
   }catch(e){
@@ -482,10 +482,42 @@ const Transcribe = {
   }
 };
 
+/* ---------- welcome + next steps ---------- */
+// First visit: pick a path. After that, a short checklist until the basics are done.
+async function renderWelcome(){
+  const welcomed = await Store.get("welcomed", "");
+  const tracker = await Store.get("tracker", null);
+  $("#welcome").hidden = !!(welcomed || (tracker && tracker.raw));
+}
+function renderChecklist(){
+  if(typeof isSample !== "function") return;
+  const items = [
+    {done: !isSample() && currentRows.length > 0, label: "Add or upload your applications", tab: "load"},
+    {done: (App.standards || "").trim().length > 20, label: "Write down the claims you can defend", tab: "banks"},
+    {done: App.interviews.length > 0, label: "Debrief an interview", tab: "interviews"}
+  ];
+  const box = $("#checklist");
+  box.hidden = !$("#welcome").hidden || isSample() || items.every(i=>i.done);
+  $("#checkitems").innerHTML = items.map(i=>`<span class="${i.done?"done":""}">${i.done ? esc(i.label) : `<a href="#" data-goto="${i.tab}">${esc(i.label)}</a>`}</span>`).join("");
+}
+async function startPath(path){
+  await Store.set("welcomed", path);
+  $("#welcome").hidden = true;
+  if(path === "example"){ show("mirror"); flash("This is a fictional search. Load your own any time from Load tracker."); }
+  if(path === "bring"){ show("load"); $("#file").focus(); }
+  if(path === "fresh"){
+    if(isSample()) load([], "your tracker", [], {allowEmpty:true});
+    show("load"); $("#qacompany").focus();
+  }
+  renderChecklist();
+}
+
 /* ---------- wiring ---------- */
 document.addEventListener("click", async e=>{
   const t = e.target;
   if(t.id === "ivrun") runDebrief();
+  const start = t.closest && t.closest("[data-start]"); if(start) startPath(start.dataset.start);
+  if(t.dataset && t.dataset.goto){ e.preventDefault(); show(t.dataset.goto); }
   if(t.dataset && "me" in t.dataset && t.closest("#ivwho")){ pickedMe = t.dataset.me; $("#ivwho").hidden = true; runDebrief(); }
   if(t.id === "ivlocal") Transcribe.local();
   if(t.id === "ivchatbot") Transcribe.chatbot();
@@ -533,11 +565,13 @@ document.addEventListener("change", async e=>{
 });
 document.addEventListener("input", e=>{
   if(e.target.id === "ivtranscript"){ pickedMe = null; $("#ivwho").hidden = true; }
-  if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); }, 500); }
+  if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); renderChecklist(); }, 500); }
 });
 (async () => {
   $("#ivdate").value = today();
   AI.inClaude().then(yes=>{ $("#aimode").textContent = yes ? "Runs on your own Claude account, right here." : "Works with any AI: the app gives you a prompt to paste into ChatGPT, Gemini, or Claude, then files the answer you paste back."; });
   if(!(await Store.persistent())) flash("This browser won't keep your data between visits. Use Export to save a backup.");
   await App.reload();
+  await renderWelcome(); renderChecklist();
+  $("#qadate").value = today();
 })();
