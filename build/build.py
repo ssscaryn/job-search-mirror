@@ -78,7 +78,9 @@ warn = {"source": "California EDD WARN report", "range": f"{rng.group(1)} to {rn
 tpl = tpl.replace("/*WARN*/", json.dumps(warn, ensure_ascii=False).replace("</", "<\\/"))
 print("warn companies:", len(agg), warn["range"])
 out = kit/"site"/"mirror.html"; out.parent.mkdir(exist_ok=True)
-page = tpl.replace("/*PLAYBOOKS*/", data)
+app_js = (here/"src"/"app.js").read_text()
+assert "</script" not in app_js.lower(), "app.js must not contain a closing script tag"
+page = tpl.replace("/*PLAYBOOKS*/", data).replace("/*APP_JS*/", app_js)
 out.write_text(page)
 # Standalone copy: the doctype keeps browsers in standards mode, and the parser places the
 # leading <meta>/<title>/<link>/<style> into <head> on its own.

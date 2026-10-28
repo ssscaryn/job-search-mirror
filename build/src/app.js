@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Mini app layer: storage, the AI bridge, backup, and the interview loop.
+   Everything stays in this browser. Nothing here talks to a server.
+   ========================================================================== */
+
+/* ---------- storage: IndexedDB, falling back to memory ---------- */
+// One object store of key -> value. Keys: tracker, interviews, stories,
+// questionsOfMe, questionsByMe, standards, prepCards, offers.
+const Store = (() => {
+  let dbp = null, memory = {};
+  function open(){
+    if(dbp) return dbp;
+    dbp = new Promise(resolve=>{
+      try{
+        const req = indexedDB.open("job-search-mirror", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("kv");
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      }catch{ resolve(null); }
+    });
+    return dbp;
+  }
+  async function get(key, fallback){
+    const db = await open();
+    if(!db) return key in memory ? memory[key] : fallback;
+    return new Promise(resolve=>{
+      try{
+        const r = db.transaction("kv").objectStore("kv").get(key);
+        r.onsuccess = () => resolve(r.result === undefined ? fallback : r.result);
+        r.onerror = () => resolve(fallback);
+      }catch{ resolve(fallback); }
+    });
+  }
+  async function set(key, value){
+    memory[key] = value;
+    const db = await open();
+    if(!db) return false;
+    return new Promise(resolve=>{
+      try{
+        const tx = db.transaction("kv","readwrite"); tx.objectStore("kv").put(value, key);
+        tx.oncomplete = () => resolve(true); tx.onerror = () => resolve(false);
+      }catch{ resolve(false); }
+    });
+  }
+  async function all(){
+    const keys = ["tracker","interviews","stories","questionsOfMe","questionsByMe","standards","prepCards","offers"];
+    const out = {}; for(const k of keys) out[k] = await get(k, null); return out;
+  }
+  return {get, set, all, persistent: async () => !!(await open())};
+})();
+
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+// The viewer's local date, not UTC: in the evening UTC is already tomorrow.
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+
+/* ---------- AI bridge ---------- */
+// Inside claude.ai the page asks Claude directly on the viewer's own account.
+// Everywhere else it hands the viewer a prompt to paste into any chatbot, then
+// files the answer they paste back. Same prompt, same parser, either way.
+const AI = (() => {
+  let samplePromise = null;
+  function claudeSample(){
+    if(!samplePromise){
+      samplePromise = (typeof window.claude === "object" && window.claude && typeof window.claude.use === "function")
+        ? window.claude.use("sample").catch(()=>null) : Promise.resolve(null);
+    }
+    return samplePromise;
+  }
+  function parseJSON(text){
+    const t = String(text||"").trim();
+    try { return JSON.parse(t); } catch {}
+    const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if(fence){ try { return JSON.parse(fence[1]); } catch {} }
+    const a = t.indexOf("{"), b = t.lastIndexOf("}");
+    if(a >= 0 && b > a){ try { return JSON.parse(t.slice(a, b+1)); } catch {} }
+    return null;
+  }
+  // Ask for JSON. `title` names the task in the paste dialog.
+  async function json(prompt, {title, onStatus} = {}){
+    const sample = await claudeSample();
+    if(sample){
+      try {
+        onStatus && onStatus("Asking Claude on your account. The first time, Claude asks you to allow it.");
+        return await sample.json(prompt);
+      } catch(e) {
+        const code = e && e.code;
+        if(code === "cancelled") throw {code};
+        if(!["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(code)){
+          const msg = code === "rate_limited" ? "Claude is busy or you've hit a usage limit. Try again in a bit, or use copy and paste."
+            : code === "prompt_too_large" ? "That transcript is too long to send in one go. Trim it, or use copy and paste."
+            : code === "invalid_json" ? "Claude's answer couldn't be read. You can paste it below and fix it, or try again."
+            : "Claude didn't finish. You can try again, or use copy and paste below.";
+          return pasteDialog(prompt, title, msg, e && e.text);
+        }
+        // Not allowed in this view: fall through to copy and paste.
+      }
+    }
+    return pasteDialog(prompt, title);
+  }
+  function pasteDialog(prompt, title, note, prefill){
+    return new Promise((resolve, reject)=>{
+      const d = $("#aidialog");
+      $("#aititle").textContent = title || "Ask your AI";
+      $("#ainote").textContent = note || "";
+      $("#ainote").hidden = !note;
+      $("#aiprompt").value = prompt;
+      $("#aianswer").value = prefill || "";
+      $("#aierr").textContent = "";
+      d.hidden = false; document.body.style.overflow = "hidden";
+      const close = () => { d.hidden = true; document.body.style.overflow = ""; cleanup(); };
+      const onCopy = async () => {
+        try { await navigator.clipboard.writeText(prompt); $("#aicopy").textContent = "Copied"; }
+        catch { $("#aiprompt").select(); $("#aicopy").textContent = "Selected: press Copy"; }
+        setTimeout(()=>$("#aicopy").textContent = "Copy prompt", 1800);
+      };
+      const onUse = () => {
+        const parsed = parseJSON($("#aianswer").value);
+        if(!parsed){ $("#aierr").textContent = "That doesn't look like the JSON the prompt asked for. Paste the whole answer, including the { and } at the start and end."; return; }
+        close(); resolve(parsed);
+      };
+      const onCancel = () => { close(); reject({code:"cancelled"}); };
+      const cleanup = () => { $("#aicopy").removeEventListener("click", onCopy); $("#aiuse").removeEventListener("click", onUse); $("#aicancel").removeEventListener("click", onCancel); };
+      $("#aicopy").addEventListener("click", onCopy);
+      $("#aiuse").addEventListener("click", onUse);
+      $("#aicancel").addEventListener("click", onCancel);
+    });
+  }
+  return {json, parseJSON, inClaude: async () => !!(await claudeSample())};
+})();
+
+/* ---------- backup: export and import ---------- */
+async function exportBackup(){
+  const data = {app:"job-search-mirror", version:1, exportedAt:new Date().toISOString(), ...(await Store.all())};
+  const text = JSON.stringify(data, null, 1), filename = `job-search-mirror-backup-${today()}.json`;
+  const downloads = (typeof window.claude === "object" && window.claude) ? await window.claude.use("downloads").catch(()=>null) : null;
+  if(downloads){
+    try { await downloads.save({filename, data:text}); flash("Backup saved."); }
+    catch(e){ if(e && e.code !== "declined") flash("This view can't save files. Open the page on the web to export."); }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([text], {type:"application/json"}));
+  const a = Object.assign(document.createElement("a"), {href:url, download:filename});
+  document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  flash("Backup downloaded. Keep it somewhere private: it holds your interview notes.");
+}
+async function importBackup(file){
+  try{
+    const data = JSON.parse(await file.text());
+    if(data.app !== "job-search-mirror") throw new Error("not a backup");
+    for(const k of ["tracker","interviews","stories","questionsOfMe","questionsByMe","standards","prepCards","offers"]){
+      if(data[k] != null) await Store.set(k, data[k]);
+    }
+    await App.reload(); flash("Backup restored.");
+  }catch{ flash("That file isn't a Job Search Mirror backup."); }
+}
+function flash(msg){
+  const el = $("#flash"); el.textContent = msg; el.hidden = false;
+  clearTimeout(flash.t); flash.t = setTimeout(()=>el.hidden = true, 4200);
+}
+
+/* ---------- prompts ---------- */
+const DEBRIEF_SHAPE = `{
+  "company": "string", "role": "string", "round": "Screener | Hiring manager | Panel | Other",
+  "attribution_questions": ["passages where you are unsure who spoke, quoted, as questions for me"],
+  "questions_asked_of_me": [{"question": "verbatim", "my_answer": "one or two sentences", "landed": "yes | partly | no", "evidence": "what the interviewer did next", "stronger_answer": "in my voice, under 90 seconds spoken", "story": "title of the story it should use, or empty"}],
+  "fell_flat": ["specific moments; never empty"],
+  "leaned_in": ["specific moments"],
+  "follow_ups": ["proof points to mention in a thank-you note"],
+  "voice": "which voice I used (specialist, adjacent field, business, recruiter friendly) and whether it fit",
+  "questions_i_asked": [{"question": "verbatim", "their_answer": "short", "what_it_reveals": "about how they work"}],
+  "operating_manual": {"priorities": ["..."], "vocabulary": ["their exact words"], "how_they_weigh_risk": "string", "what_failure_looks_like": "string", "first_year_needs": "string"},
+  "red_flags": {"interviewers": 0, "possibly_unlawful_questions": ["quoted"], "resume_misstated": ["what they said vs what the resume says"], "scope_changes": ["..."], "other": ["..."]},
+  "new_stories": [{"title": "string", "proves": "string", "situation": "string", "action": "string", "result": "string", "sixty_second": "string"}]
+}`;
+
+function debriefPrompt({transcript, company, role, round, standards, storyTitles}){
+  return `You are my interview coach doing a debrief from a transcript. Be my critic before my fan: list what fell flat before anything that went well, and argue the interviewer's side.
+
+Rules:
+- Go question by question through every question I was asked.
+- AI note takers often credit a line to the wrong speaker. Where you are not sure who said something, add it to attribution_questions and use your best guess for now.
+- Never infer anyone's gender, race, or age from names or voices.
+- "Possibly unlawful" covers questions about age, children or family plans, marital status, religion, national origin, disability or health, pregnancy, or salary history. Quote them. This is a flag, not a legal finding.
+- Stronger answers must stay true to my claims below. Do not invent experience, tools, numbers, or titles.
+- Write in plain language. No lists of three for rhythm, no "not X but Y" constructions.
+
+What I told you about this interview: company ${company || "(read it from the transcript)"}, role ${role || "(read it from the transcript)"}, round ${round || "(read it from the transcript)"}.
+
+My standards and claims I can defend:
+${standards ? standards.slice(0, 6000) : "(none recorded yet)"}
+
+Stories already in my story bank (link answers to these by title where they fit; only add new_stories for genuinely new material):
+${storyTitles.length ? storyTitles.map(t=>"- "+t).join("\n") : "(none yet)"}
+
+Reply with only one JSON object in exactly this shape, no other text:
+${DEBRIEF_SHAPE}
+
+Transcript:
+"""
+${transcript}
+"""`;
+}
+
+/* ---------- app state + rendering ---------- */
+const App = {
+  interviews: [], stories: [], questionsOfMe: [], questionsByMe: [], standards: "",
+  async reload(){
+    this.interviews = await Store.get("interviews", []);
+    this.stories = await Store.get("stories", []);
+    this.questionsOfMe = await Store.get("questionsOfMe", []);
+    this.questionsByMe = await Store.get("questionsByMe", []);
+    this.standards = await Store.get("standards", "");
+    const tracker = await Store.get("tracker", null);
+    if(tracker && tracker.raw && tracker.raw.length){ load(tracker.raw, tracker.label, tracker.extras || [], {persist:false}); }
+    else if(currentRows.length){ renderWatch(currentRows); }
+    renderInterviews(); renderBanks();
+    $("#standards").value = this.standards;
+  }
+};
+
+// Red flags from debriefs, keyed by normalised company, merged into posting watch.
+function interviewFlags(){
+  const out = {};
+  App.interviews.forEach(iv=>{
+    const d = iv.debrief || {}, rf = d.red_flags || {}, k = normCo(iv.company || d.company || "");
+    if(!k) return;
+    const f = out[k] ||= {name: iv.company || d.company, unlawful:[], misstated:[], panel:[], scope:[]};
+    (rf.possibly_unlawful_questions||[]).forEach(q=>f.unlawful.push(String(q)));
+    (rf.resume_misstated||[]).forEach(q=>f.misstated.push(String(q)));
+    (rf.scope_changes||[]).forEach(q=>f.scope.push(String(q)));
+    if(iv.panel) f.panel.push(iv.panel + (rf.interviewers ? ` (${rf.interviewers} interviewers)` : ""));
+  });
+  return out;
+}
+
+function renderInterviews(){
+  const list = $("#ivlist");
+  if(!App.interviews.length){ list.innerHTML = `<p class="muted small">No debriefs yet. Your first one starts the question bank and story bank.</p>`; return; }
+  list.innerHTML = App.interviews.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(iv=>{
+    const d = iv.debrief || {}, q = d.questions_asked_of_me || [];
+    const landed = q.filter(x=>x.landed==="yes").length;
+    return `<details class="card iv" data-id="${iv.id}">
+      <summary><div class="row" style="justify-content:space-between;width:100%"><div><b>${esc(iv.company||d.company||"Interview")}</b> <span class="muted small">${esc(iv.round||d.round||"")} · ${esc(iv.date||"")}</span></div>
+      <span class="small muted">${q.length} questions · ${landed} landed</span></div></summary>
+      ${debriefHTML(iv)}
+      <div class="row" style="margin-top:12px"><button class="btn" data-act="prep" data-id="${iv.id}">Prep card for the next round</button><button class="btn" data-act="del" data-id="${iv.id}">Delete</button></div>
+    </details>`;
+  }).join("");
+}
+const li = arr => (arr||[]).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("");
+function debriefHTML(iv){
+  const d = iv.debrief || {}, om = d.operating_manual || {}, rf = d.red_flags || {};
+  const flags = [...(rf.possibly_unlawful_questions||[]).map(x=>["bad","Possibly unlawful question",x]),
+    ...(rf.resume_misstated||[]).map(x=>["bad","Resume misstated",x]), ...(rf.scope_changes||[]).map(x=>["warn","Scope changed",x]),
+    ...(iv.panel?[["warn","Panel observation",iv.panel]]:[])];
+  return `
+    ${(d.attribution_questions||[]).length ? `<div class="note small" style="margin-top:10px"><b>Check who said what.</b> The note taker may have mixed up speakers here. If any of these are wrong, fix the transcript and run the debrief again.<ul>${li(d.attribution_questions)}</ul></div>`:""}
+    <div class="grid two" style="margin-top:12px">
+      <div><h3>What fell flat</h3><ul class="small">${li(d.fell_flat)}</ul></div>
+      <div><h3>What made them lean in</h3><ul class="small">${li(d.leaned_in)}</ul></div>
+    </div>
+    <h3 style="margin-top:14px">Question by question</h3>
+    <div class="scroll"><table class="small"><tr><th>Question</th><th>Landed?</th><th>Stronger answer</th></tr>
+      ${(d.questions_asked_of_me||[]).map(x=>`<tr><td><b>${esc(x.question)}</b><div class="muted">${esc(x.my_answer)}</div></td><td><span class="flag ${x.landed==="yes"?"ok":x.landed==="no"?"bad":"warn"}">${esc(x.landed||"?")}</span><div class="muted">${esc(x.evidence)}</div></td><td>${esc(x.stronger_answer)}${x.story?`<div class="muted">Story: ${esc(x.story)}</div>`:""}</td></tr>`).join("")}
+    </table></div>
+    <div class="grid two" style="margin-top:12px">
+      <div><h3>Their operating manual</h3><ul class="small">
+        ${(om.priorities||[]).length?`<li><b>Priorities:</b> ${esc(om.priorities.join("; "))}</li>`:""}
+        ${(om.vocabulary||[]).length?`<li><b>Their words:</b> ${esc(om.vocabulary.join(", "))}</li>`:""}
+        ${om.how_they_weigh_risk?`<li><b>Risk:</b> ${esc(om.how_they_weigh_risk)}</li>`:""}
+        ${om.what_failure_looks_like?`<li><b>Failure looks like:</b> ${esc(om.what_failure_looks_like)}</li>`:""}
+        ${om.first_year_needs?`<li><b>First year:</b> ${esc(om.first_year_needs)}</li>`:""}
+      </ul></div>
+      <div><h3>Thank-you note proof points</h3><ul class="small">${li(d.follow_ups)}</ul>${d.voice?`<p class="small muted"><b>Voice:</b> ${esc(d.voice)}</p>`:""}</div>
+    </div>
+    ${flags.length?`<h3 style="margin-top:12px">Red flags logged to posting watch</h3><div class="small">${flags.map(([c,t,e])=>`<div><span class="flag ${c}">${t}</span> ${esc(e)}</div>`).join("")}</div>`:""}`;
+}
+
+async function runDebrief(){
+  const transcript = $("#ivtranscript").value.trim();
+  const err = $("#iverr"); err.textContent = "";
+  if(!$("#ivconsent").checked){ err.textContent = "Confirm the interviewers knew the conversation was recorded or transcribed. Without consent, paste your own notes instead."; return; }
+  if(transcript.length < 200){ err.textContent = "Paste the transcript or your notes first (at least a few paragraphs)."; return; }
+  const meta = {company: $("#ivcompany").value.trim(), role: $("#ivrole").value.trim(), round: $("#ivround").value, date: $("#ivdate").value || today(), panel: $("#ivpanel").value.trim()};
+  const btn = $("#ivrun"); btn.disabled = true; const status = $("#ivstatus");
+  status.textContent = "Working on it. This can take a minute for a long interview.";
+  try{
+    const debrief = await AI.json(debriefPrompt({transcript, ...meta, standards: App.standards, storyTitles: App.stories.map(s=>s.title)}),
+      {title:"Interview debrief", onStatus: s=>status.textContent = s});
+    if(!debrief || !Array.isArray(debrief.questions_asked_of_me)) throw {code:"shape"};
+    const iv = {id:uid(), ...meta, company: meta.company || debrief.company || "", role: meta.role || debrief.role || "", round: meta.round || debrief.round || "", transcript, debrief, createdAt: Date.now()};
+    App.interviews.push(iv); await Store.set("interviews", App.interviews);
+    fileIntoBanks(iv); await Store.set("questionsOfMe", App.questionsOfMe); await Store.set("questionsByMe", App.questionsByMe); await Store.set("stories", App.stories);
+    $("#ivtranscript").value = ""; status.textContent = "";
+    renderInterviews(); renderBanks(); renderWatch(currentRows);
+    const first = $(`#ivlist details[data-id="${iv.id}"]`); if(first) first.open = true;
+    flash("Debrief saved. Questions and stories were added to your banks.");
+  }catch(e){
+    status.textContent = e && e.code === "cancelled" ? "" : e && e.code === "shape" ? "The answer didn't include the question-by-question breakdown. Try again." : "Something went wrong. Try again.";
+  }finally{ btn.disabled = false; }
+}
+
+// File a debrief's questions and new stories into the banks.
+function fileIntoBanks(iv){
+  const d = iv.debrief, src = `${iv.company} · ${iv.round || "interview"} · ${iv.date}`;
+  const key = s => String(s||"").toLowerCase().replace(/[^a-z0-9 ]+/g,"").replace(/\s+/g," ").trim();
+  (d.questions_asked_of_me||[]).forEach(x=>{
+    const k = key(x.question); if(!k) return;
+    const hit = App.questionsOfMe.find(q=>key(q.question)===k);
+    if(hit){ hit.count++; hit.seen.push(src); hit.best = x.stronger_answer || hit.best; }
+    else App.questionsOfMe.push({id:uid(), question:x.question, count:1, seen:[src], best:x.stronger_answer||"", landed:x.landed||""});
+  });
+  (d.questions_i_asked||[]).forEach(x=>{
+    const k = key(x.question); if(!k) return;
+    const hit = App.questionsByMe.find(q=>key(q.question)===k);
+    if(hit){ hit.count++; hit.notes.push(`${src}: ${x.what_it_reveals||x.their_answer||""}`); }
+    else App.questionsByMe.push({id:uid(), question:x.question, count:1, rating:"", notes:[`${src}: ${x.what_it_reveals||x.their_answer||""}`]});
+  });
+  (d.new_stories||[]).forEach(s=>{
+    if(!s.title || App.stories.some(t=>key(t.title)===key(s.title))) return;
+    App.stories.push({id:uid(), title:s.title, proves:s.proves||"", situation:s.situation||"", action:s.action||"", result:s.result||"", sixty:s.sixty_second||"", source:src});
+  });
+}
+
+/* ---------- banks (read view; editing comes next) ---------- */
+function renderBanks(){
+  const qo = App.questionsOfMe.slice().sort((a,b)=>b.count-a.count);
+  $("#qofme").innerHTML = qo.length ? qo.map(q=>`<li><b>${esc(q.question)}</b> <span class="muted small">asked ${q.count}×</span>${q.best?`<div class="small muted">Stronger answer: ${esc(q.best)}</div>`:""}</li>`).join("") : `<li class="muted small">Questions you're asked appear here after your first debrief.</li>`;
+  $("#qbyme").innerHTML = App.questionsByMe.length ? App.questionsByMe.map(q=>`<li><b>${esc(q.question)}</b>${q.notes.length?`<div class="small muted">${esc(q.notes[q.notes.length-1])}</div>`:""}</li>`).join("") : `<li class="muted small">Questions you ask interviewers appear here.</li>`;
+  $("#stories").innerHTML = App.stories.length ? App.stories.map(s=>`<details class="story"><summary><b>${esc(s.title)}</b> <span class="muted small">${esc(s.proves)}</span></summary><p class="small">${esc(s.sixty||[s.situation,s.action,s.result].filter(Boolean).join(" "))}</p><p class="small muted">From ${esc(s.source||"you")}</p></details>`).join("") : `<p class="muted small">Stories from your debriefs collect here.</p>`;
+}
+
+/* ---------- wiring ---------- */
+document.addEventListener("click", async e=>{
+  const t = e.target;
+  if(t.id === "ivrun") runDebrief();
+  if(t.id === "exportbtn") exportBackup();
+  if(t.id === "importbtn") $("#importfile").click();
+  if(t.dataset && t.dataset.act === "del"){
+    if(t.dataset.confirm !== "1"){ t.dataset.confirm = "1"; t.textContent = "Delete for good?"; return; }
+    App.interviews = App.interviews.filter(iv=>iv.id !== t.dataset.id); await Store.set("interviews", App.interviews);
+    renderInterviews(); renderWatch(currentRows);
+  }
+  if(t.dataset && t.dataset.act === "prep"){ show("prep"); flash("Prep cards arrive in the next build."); }
+});
+document.addEventListener("change", e=>{
+  if(e.target.id === "importfile" && e.target.files[0]) importBackup(e.target.files[0]);
+});
+document.addEventListener("input", e=>{
+  if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); }, 500); }
+});
+(async () => {
+  $("#ivdate").value = today();
+  AI.inClaude().then(yes=>{ $("#aimode").textContent = yes ? "Runs on your own Claude account, right here." : "Works with any AI: the app gives you a prompt to paste into ChatGPT, Gemini, or Claude, then files the answer you paste back."; });
+  if(!(await Store.persistent())) flash("This browser won't keep your data between visits. Use Export to save a backup.");
+  await App.reload();
+})();
