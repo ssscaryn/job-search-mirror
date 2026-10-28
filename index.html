@@ -358,7 +358,7 @@ function sampleRows(){
       "Date applied": d.toISOString().slice(0,10), Company: c[0], "Role title": c[2][Math.floor(r()*c[2].length)],
       "Role family": c[1], "Posting age": age>13 ? Math.round(age/7)+" weeks" : age+" days",
       "Times reposted": String(c[4]), "Comp band": c[5] ? "$140k-$185k" : "",
-      "Furthest round": round, Outcome: outcome, Source: "LinkedIn", ...(EXTRA[c[0]] || {})
+      "Furthest round": round, Outcome: outcome, Source: "LinkedIn", ...(round ? EXTRA[c[0]] || {} : {})
     });
   }});
   // Ghosted only on the application that reached the panel.
@@ -371,9 +371,17 @@ function sampleRows(){
   rows.push({"Date applied":"2026-08-19",Company:"Unnamed client via Vantage Talent","Role title":"Remote Security Analyst","Role family":"GRC",
     "Posting age":"2 days","Times reposted":"0","Comp band":"$200k-$260k","Furthest round":"",Outcome:"Withdrawn",Source:"Vantage Talent",
     "Client disclosed":"No","Scam signals":"Telegram only; asked for SSN and bank details before an interview"});
-  // The talk's ending: at least one of those became an offer.
-  const panel = rows.filter(r=>r["Furthest round"]==="Panel" && r.Outcome==="Active").pop();
-  if(panel){ panel["Furthest round"]="Offer"; panel.Outcome="Offer"; panel["Offer changes"]="Title down-levelled from Senior; 48-hour deadline"; }
+  // Process details only exist where there was a process: make sure each company
+  // with fictional interview details has at least one application that interviewed.
+  Object.keys(EXTRA).forEach(co=>{
+    if(rows.some(r=>r.Company===co && r["Furthest round"])) return;
+    const r = rows.filter(r=>r.Company===co).pop(); if(!r) return;
+    Object.assign(r, {"Furthest round":"Hiring manager", Outcome:"Rejected"}, EXTRA[co]);
+  });
+  // The talk's ending: at least one of those became an offer, after just two rounds
+  // (not every company runs the same number).
+  const hm = rows.filter(r=>r["Furthest round"]==="Hiring manager" && r.Outcome==="Active" && !EXTRA[r.Company]).pop();
+  if(hm){ hm["Furthest round"]="Hiring manager"; hm.Outcome="Offer"; hm["Number of rounds"]="2"; hm["Offer changes"]="Title down-levelled from Senior; 48-hour deadline"; }
   return rows;
 }
 
@@ -496,7 +504,16 @@ function normalise(raw){
       : /withdr/.test(o) ? "Withdrawn"
       : /active|sched|progress|interview|screen|round|done|inbound|yes/.test(o) ? "Active"
       : round ? "Active" : "No response";
-    if(outcome==="Offer") round = "Offer";
+    // Depth = how many interview rounds this application reached. Companies run
+    // different numbers of rounds, so the chart follows depth, not stage names.
+    const stageDepth = {"Screener":1,"Hiring manager":2,"Panel":3}[round] || 0;
+    const roundsCount = (String(g("rounds")).match(/\d+/) || [0])[0] * 1;
+    let depth = Math.max(roundNum, roundsCount, stageDepth);
+    let depthUnknown = false;
+    if(outcome !== "No response" && !depth && round){ depth = 1; depthUnknown = true; }
+    if(outcome==="Offer"){ round = "Offer"; if(!depth){ depth = 1; depthUnknown = true; } }
+    // No word after an interview is its own ending, not "active".
+    const stale = /stale|ghost|no word|no response|went quiet|silent/.test(o);
     const a = g("age").toLowerCase(); const m = a.match(/(\d+)\s*(days?|weeks?|months?|d|w|mo)\b/);
     const ageDays = m ? +m[1] * (/^w/.test(m[2])?7:/^mo/.test(m[2])?30:1) : null;
     const d = new Date(g("date"));
@@ -510,23 +527,37 @@ function normalise(raw){
       first: dt(g("first")), decision: dt(g("decision")), interviewers: num(g("interviewers")), panel: g("panel"),
       unlawful: g("unlawful"), misstated: no(g("misstated")) ? "" : g("misstated"),
       rescheduled: num(g("rescheduled")), ghosted: yes(g("ghosted")), offerchg: g("offerchg"),
+      depth, depthUnknown, stale,
       reached: s => STAGES.indexOf(round) >= STAGES.indexOf(s) && round!=="" };
   });
+}
+
+// How an application ended. Ghosted = no word after at least one interview.
+function endOf(r){
+  if(r.outcome === "Offer") return "offer";
+  if(r.outcome === "Rejected") return r.depth ? "closed" : "closedpre";
+  if(r.outcome === "Withdrawn") return r.depth ? "withdrawn" : "closedpre";
+  if(r.depth && (r.ghosted || r.stale)) return "ghosted";
+  if(r.depth) return "active";
+  return "noresponse";
 }
 
 /* ---------- render: stats ---------- */
 function renderStats(rows){
   const n = rows.length, responded = rows.filter(r=>r.outcome!=="No response").length;
-  const interviews = rows.filter(r=>r.round).length;
-  const reach = STAGES.map(s=>rows.filter(r=>r.reached(s)).length);
+  const interviews = rows.filter(r=>r.depth>0).length;
+  // Advancement from round k to k+1, judged only on processes that finished
+  // round k (still-active ones at round k haven't had the chance to advance).
+  const maxD = Math.max(0, ...rows.map(r=>r.depth));
   let stall = null;
-  for(let i=0;i<STAGES.length-1;i++){
-    if(reach[i] >= 3){ const rate = reach[i+1]/reach[i]; if(!stall || rate < stall.rate) stall = {from:STAGES[i], rate}; }
+  for(let k=1;k<maxD;k++){
+    const reachedK = rows.filter(r=>r.depth>=k), decided = reachedK.filter(r=>r.depth>k || endOf(r)!=="active");
+    if(decided.length >= 3){ const rate = reachedK.filter(r=>r.depth>k).length / decided.length; if(!stall || rate < stall.rate) stall = {k, rate}; }
   }
   const weeks = weekly(rows), last = weeks.slice(-4), avg = last.length ? Math.round(last.reduce((a,w)=>a+w.n,0)/last.length) : 0;
   $("#stats").innerHTML = [
     [n,"applications sent"],[pct(responded,n)+"%","heard back at all"],[interviews,"reached an interview"],
-    [stall ? pct(stall.rate*reach[STAGES.indexOf(stall.from)],reach[STAGES.indexOf(stall.from)])+"%" : "–", stall ? `advance past ${stall.from.toLowerCase()}: your stall point` : "not enough rounds yet", true],
+    [stall ? Math.round(stall.rate*100)+"%" : "–", stall ? `advance past round ${stall.k}: your stall point` : "not enough rounds yet", true],
     [avg, avg>=FLOOR ? "per week lately: on pace" : `per week lately: below the floor of ${FLOOR}`]
   ].map(([v,l,hl])=>`<div class="card stat${hl?" hl":""}"><div class="n">${esc(v)}</div><div class="l">${esc(l)}</div></div>`).join("");
 }
@@ -537,39 +568,50 @@ function renderSankey(rows){
   const N = rows.length;
   const nodes = [], links = [];
   const add = (id,label,col,kind) => { nodes.push({id,label,col,kind,in:0,out:0}); return id; };
-  add("applied",`Applied`,0,"main");
-  const noresp = rows.filter(r=>r.outcome==="No response").length;
-  const rejPre = rows.filter(r=>!r.round && r.outcome!=="No response").length;
-  add("noresp","No response",1,"dead"); add("rejpre","Closed before interview",1,"closed");
-  links.push(["applied","noresp",noresp],["applied","rejpre",rejPre]);
+  const ends = rows.map(endOf);
+  const count = f => rows.filter((r,i)=>f(r, ends[i])).length;
+  // Applied -> no response / closed before any interview / round 1.
+  add("applied","Applied",0,"main");
+  const noresp = count((r,e)=>e==="noresponse"), pre = count((r,e)=>e==="closedpre");
+  if(noresp){ add("noresp","No response",1,"dead"); links.push(["applied","noresp",noresp]); }
+  if(pre){ add("pre","Closed before interview",1,"closed"); links.push(["applied","pre",pre]); }
+  // Then one column per round reached; each round's ending branches off where it happened.
+  const CAP = 6, depthOf = r => Math.min(r.depth, CAP);
+  const ord = k => k===1?"1st":k===2?"2nd":k===3?"3rd":`${k}th`;
+  const maxD = Math.max(0, ...rows.map(depthOf));
+  const ENDS = [["offer","Offer","ok"],["active","Still active","active"],["ghosted","No word","dead"],["closed","Closed","closed"],["withdrawn","Withdrew","closed"]];
   let prev = "applied";
-  STAGES.forEach((s,i)=>{
-    const reached = rows.filter(r=>r.reached(s)).length;
-    if(!reached) return;
-    const id = "s"+i; add(id,s,i+1,s==="Offer"?"ok":"main"); links.push([prev,id,reached]);
-    if(s!=="Offer"){
-      const stopped = rows.filter(r=>r.round===s);
-      const closed = stopped.filter(r=>r.outcome!=="Active").length, active = stopped.length-closed;
-      if(closed){ add(id+"c",`Closed at ${s.toLowerCase()}`,i+2,"closed"); links.push([id,id+"c",closed]); }
-      if(active){ add(id+"a",`Active at ${s.toLowerCase()}`,i+2,"active"); links.push([id,id+"a",active]); }
-    }
+  for(let k=1;k<=maxD;k++){
+    const reached = count(r=>depthOf(r)>=k); if(!reached) break;
+    const id = "r"+k; add(id, `${ord(k)} interview${k===CAP?" or later":""}`, k, "main"); links.push([prev, id, reached]);
+    ENDS.forEach(([e,label,kind])=>{
+      const n = count((r,en)=>depthOf(r)===k && en===e && !(k===1 && r.depthUnknown));
+      if(n){ add(id+e, `${label} after ${ord(k)}`, k+1, kind); links.push([id, id+e, n]); }
+      // Interviewed, but the tracker doesn't say how many rounds: don't pretend it was one.
+      const u = k===1 ? count((r,en)=>r.depthUnknown && en===e) : 0;
+      if(u){ add(id+e+"u", `${label}, rounds not recorded`, k+1, kind); links.push([id, id+e+"u", u]); }
+    });
     prev = id;
-  });
+  }
   const byId = Object.fromEntries(nodes.map(n=>[n.id,n]));
   links.forEach(([a,b,v])=>{ byId[a].out+=v; byId[b].in+=v; });
   nodes.forEach(n=>n.v = Math.max(n.in,n.out));
   const cols = Math.max(...nodes.map(n=>n.col))+1;
-  const colX = c => 10 + c*((W-200)/(cols-1));
+  // Room for an ending's label between columns; wider than the card scrolls sideways.
+  const colW = Math.max(165, (W-210)/Math.max(1,cols-1)), width = Math.round(210 + colW*(cols-1));
+  const colX = c => 10 + c*colW;
   const maxCount = Math.max(...Array.from({length:cols},(_,c)=>nodes.filter(n=>n.col===c).length));
-  const k = (H - 20 - (maxCount-1)*pad) / N;
+  const k = (H - 40 - (maxCount-1)*pad) / N;
   // Main flow runs along the top; each column's closed/active ends sit below
   // the previous column's, so labels never collide with the next column.
+  // Rounds run along the top (label above each bar); endings stack below.
   let floor = 0;
+  const TOP = 26;
   for(let c=0;c<cols;c++){
     const col = nodes.filter(n=>n.col===c);
-    const isMain = n => n.kind==="main"||n.kind==="ok";
+    const isMain = n => n.kind==="main";
     col.sort((a,b)=>(isMain(a)?0:1)-(isMain(b)?0:1));
-    let y = 10;
+    let y = TOP;
     col.forEach(n=>{
       if(!isMain(n) && c>1) y = Math.max(y, floor);
       n.x=colX(c); n.y=y; n.h=Math.max(2,n.v*k); n.so=0; n.ti=0; y+=n.h+pad;
@@ -577,6 +619,8 @@ function renderSankey(rows){
     });
   }
   links.sort((p,q)=>byId[p[1]].y-byId[q[1]].y);
+  const needH = Math.max(H, ...nodes.map(n=>n.y+n.h+12));
+  svg.setAttribute("width", width); svg.setAttribute("height", Math.ceil(needH)); svg.setAttribute("viewBox", `0 0 ${width} ${Math.ceil(needH)}`);
   const color = {main:css("--flow"),ok:css("--flow-ok"),dead:css("--flow-3"),closed:css("--flow-2"),active:css("--flow-ok")};
   let out = "";
   links.forEach(([a,b,v])=>{
@@ -587,7 +631,8 @@ function renderSankey(rows){
   });
   nodes.forEach(n=>{
     out += `<rect x="${n.x}" y="${n.y}" width="${nodeW}" height="${n.h}" rx="3" fill="${color[n.kind]}"/>`;
-    out += `<text x="${n.x+nodeW+8}" y="${n.y+n.h/2}" dominant-baseline="middle" font-size="13" fill="${css("--ink")}"><tspan font-weight="600">${esc(n.label)}</tspan><tspan fill="${css("--ink-2")}"> ${n.v} · ${pct(n.v,N)}%</tspan></text>`;
+    const above = n.kind === "main" && n.col > 0;
+    out += `<text x="${above ? n.x : n.x+nodeW+8}" y="${above ? n.y-8 : n.y+n.h/2}" ${above ? "" : 'dominant-baseline="middle"'} font-size="13" fill="${css("--ink")}"><tspan font-weight="600">${esc(n.label)}</tspan><tspan fill="${css("--ink-2")}"> ${n.v} · ${pct(n.v,N)}%</tspan></text>`;
   });
   svg.innerHTML = out;
 }
@@ -743,31 +788,51 @@ $("#copy").addEventListener("click", async ()=>{
 // Fill outcome and furthest round onto each application from any other sheet that
 // names the same company (and role, when the role disambiguates).
 function mergeOutcomes(rows, extras){
-  let filled = 0; const used = [];
+  let filled = 0, added = 0; const used = [];
+  const keyOf = r => normCo(r.company) + "|" + r.title.toLowerCase().trim();
+  const extraRows = new Map();   // rows found only on other sheets, deduplicated across sheets
+  const absorb = (r, o) => {
+    const better = o.depth > r.depth || (r.depthUnknown && o.depth && !o.depthUnknown) || STAGES.indexOf(o.round) > STAGES.indexOf(r.round);
+    if(better){
+      r.depth = Math.max(o.depthUnknown ? 0 : o.depth, r.depthUnknown ? 0 : r.depth) || Math.max(r.depth, o.depth);
+      r.depthUnknown = r.depthUnknown && o.depthUnknown;
+      r.round = o.round || r.round || "Interview"; const rr = r.round; r.reached = s => STAGES.indexOf(rr) >= STAGES.indexOf(s);
+    }
+    if(o.stale) r.stale = true;
+    if(o.outcome!=="No response" && (r.outcome==="No response" || r.outcome==="Active" || better)) r.outcome = o.outcome;
+    if(!r.date && o.date) r.date = o.date;
+    return better || o.outcome!=="No response";
+  };
   extras.forEach(({name, raw})=>{
     const other = normalise(raw).filter(r=>r.company!=="Unknown");
     if(!other.length) return;
+    // A sheet named for its outcome ("Rejected After Interview", "Offers") says what
+    // happened even when it has no outcome column; an explicit outcome still wins.
+    const sheetSays = /reject|declin|closed|turned down|\blost\b/i.test(name) ? "Rejected" : /\boffers?\b/i.test(name) ? "Offer" : "";
+    if(sheetSays) other.forEach(o=>{ if(o.outcome === "Active" || o.outcome === "No response"){ o.outcome = sheetSays; if(sheetSays === "Offer" && !o.depth){ o.depth = 1; o.depthUnknown = true; } } });
     const byKey = {}, byCo = {};
-    other.forEach(o=>{ const co = normCo(o.company); (byCo[co] ||= []).push(o); byKey[co+"|"+o.title.toLowerCase()] = o; });
+    rows.forEach(r=>{ const co = normCo(r.company); (byCo[co] ||= []).push(r); byKey[keyOf(r)] = r; });
     let n = 0;
-    rows.forEach(r=>{
-      const co = normCo(r.company);
-      const o = byKey[co+"|"+r.title.toLowerCase()] || (byCo[co] && byCo[co].length===1 ? byCo[co][0] : null);
-      if(!o) return;
-      const better = STAGES.indexOf(o.round) > STAGES.indexOf(r.round);
-      if(better){ r.round = o.round; const rr = o.round; r.reached = s => STAGES.indexOf(rr) >= STAGES.indexOf(s); }
-      if(o.outcome!=="No response" && (r.outcome==="No response" || r.outcome==="Active" || better)) r.outcome = o.outcome;
-      if(better || o.outcome!=="No response") n++;
+    other.forEach(o=>{
+      const co = normCo(o.company);
+      const r = byKey[keyOf(o)] || (byCo[co] && byCo[co].length===1 ? byCo[co][0] : null);
+      if(r){ if(absorb(r, o)) n++; return; }
+      // Not on the main sheet: an inbound recruiter, or an application logged elsewhere.
+      // Keep it if it says something happened, so interviews aren't silently dropped.
+      if(o.outcome === "No response" && !o.depth) return;
+      const k = keyOf(o), seen = extraRows.get(k) || extraRows.get(co + "|");
+      if(seen) absorb(seen, o); else { o.fromSheet = name; extraRows.set(k, o); if(!o.title) extraRows.set(co + "|", o); }
     });
     if(n){ filled += n; used.push(name); }
   });
-  return {filled, used};
+  const unique = [...new Set(extraRows.values())];
+  unique.forEach(o=>rows.push(o)); added = unique.length;
+  return {filled, used, added, addedFrom: [...new Set(unique.map(o=>o.fromSheet))]};
 }
-let currentRows = [];
 function load(raw, label, extras=[], opts={}){
   warnData = label.startsWith("the sample") ? SAMPLE_WARN : WARN;
   const rows = normalise(raw);
-  const merged = extras.length ? mergeOutcomes(rows, extras) : {filled:0, used:[]};
+  const merged = extras.length ? mergeOutcomes(rows, extras) : {filled:0, used:[], added:0, addedFrom:[]};
   if(lanesGuessed){
     let saved = null; try{ saved = JSON.parse(localStorage.getItem("mirror-lanes")||"null"); }catch{}
     laneRules = saved && saved.length ? saved : autoLanes(rows.map(r=>r.title));
@@ -775,7 +840,7 @@ function load(raw, label, extras=[], opts={}){
   }
   currentRows = rows;
   if(!rows.length){ $("#loadmsg").textContent = "No rows found. Check the first line holds column names."; return; }
-  $("#banner").innerHTML = `Showing <b>${esc(label)}</b>: ${rows.length} applications. ${label.startsWith("the sample")?"Every company in it is fictional.":"This stays in your browser."}${merged.filled ? ` Outcomes and rounds for ${merged.filled} applications filled in from ${merged.used.map(esc).join(", ")}.` : ""} <a href="#" id="toload">Load your own</a>`;
+  $("#banner").innerHTML = `Showing <b>${esc(label)}</b>: ${rows.length} applications. ${label.startsWith("the sample")?"Every company in it is fictional.":"This stays in your browser."}${merged.filled ? ` Outcomes and rounds for ${merged.filled} applications filled in from ${merged.used.map(esc).join(", ")}.` : ""}${merged.added ? ` ${merged.added} more found only on ${merged.addedFrom.map(esc).join(", ")} were added.` : ""} <a href="#" id="toload">Load your own</a>`;
   $("#toload").onclick = e=>{ e.preventDefault(); show("load"); };
   renderStats(rows); renderSankey(rows); renderLanes(rows); renderPace(rows); renderWatch(rows);
   // Remember a real tracker between visits (never the sample).
