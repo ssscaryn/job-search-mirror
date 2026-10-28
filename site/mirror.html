@@ -95,6 +95,14 @@ input.t,select.t{width:100%;font:inherit;border:1px solid var(--line);border-rad
 details.iv{margin-top:12px}
 details.iv>summary,details.story>summary{cursor:pointer;list-style:none}
 details.iv>summary::-webkit-details-marker,details.story>summary::-webkit-details-marker{display:none}
+.spk{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.spk>div:first-child{flex:1 1 260px}
+.segs{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;padding:4px 12px;font-weight:600;font-size:.78rem;color:var(--ink-2);cursor:pointer;background:var(--surface)}
+.seg+.seg span{border-left:1px solid var(--line)}
+.seg input:checked+span{background:var(--ink);color:var(--bg)}
+.seg input:focus-visible+span{outline:2px solid var(--ember);outline-offset:-2px}
 details.story{border-bottom:1px solid var(--line);padding:8px 0}
 ul.bank{padding-left:18px;margin:8px 0 0}
 ul.bank li{margin-bottom:8px}
@@ -998,7 +1006,7 @@ function flash(msg){
 /* ---------- prompts ---------- */
 const DEBRIEF_SHAPE = `{
   "company": "string", "role": "string", "round": "Screener | Hiring manager | Panel | Other",
-  "attribution_questions": ["passages where you are unsure who spoke, quoted, as questions for me"],
+  "attribution_checks": [{"quote": "the exact words where you are unsure who spoke", "guess": "me | interviewer"}],
   "questions_asked_of_me": [{"question": "verbatim", "my_answer": "one or two sentences", "landed": "yes | partly | no", "evidence": "what the interviewer did next", "stronger_answer": "in my voice, under 90 seconds spoken", "story": "title of the story it should use, or empty"}],
   "fell_flat": ["specific moments; never empty"],
   "leaned_in": ["specific moments"],
@@ -1010,12 +1018,12 @@ const DEBRIEF_SHAPE = `{
   "new_stories": [{"title": "string", "proves": "string", "situation": "string", "action": "string", "result": "string", "sixty_second": "string"}]
 }`;
 
-function debriefPrompt({transcript, company, role, round, standards, storyTitles, audioName}){
+function debriefPrompt({transcript, company, role, round, standards, storyTitles, audioName, corrections}){
   return `You are my interview coach doing a debrief from a transcript. Be my critic before my fan: list what fell flat before anything that went well, and argue the interviewer's side.
 
 Rules:
 - Go question by question through every question I was asked.
-- AI note takers often credit a line to the wrong speaker. Where you are not sure who said something, add it to attribution_questions and use your best guess for now.
+- AI note takers often credit a line to the wrong speaker. Where you are not sure who said something, add it to attribution_checks with your best guess, and carry on using that guess. Only include lines where the speaker changes the analysis.
 - Never infer anyone's gender, race, or age from names or voices.
 - "Possibly unlawful" covers questions about age, children or family plans, marital status, religion, national origin, disability or health, pregnancy, or salary history. Quote them. This is a flag, not a legal finding.
 - Stronger answers must stay true to my claims below. Do not invent experience, tools, numbers, or titles.
@@ -1029,10 +1037,13 @@ ${standards ? standards.slice(0, 6000) : "(none recorded yet)"}
 Stories already in my story bank (link answers to these by title where they fit; only add new_stories for genuinely new material):
 ${storyTitles.length ? storyTitles.map(t=>"- "+t).join("\n") : "(none yet)"}
 
-Reply with only one JSON object in exactly this shape, no other text:
+${corrections && corrections.length ? `I have already confirmed who said these lines. Treat them as fact, and leave attribution_checks empty for them:
+${corrections.map(c=>`- "${c.quote}" was said by ${c.who === "me" ? "me" : "the interviewer"}`).join("\n")}
+
+` : ""}Reply with only one JSON object in exactly this shape, no other text:
 ${DEBRIEF_SHAPE}
 
-${audioName ? `The interview is in the audio file I've attached (${audioName}). Transcribe it yourself first, then do the debrief from your transcript. Audio has no speaker names, so use attribution_questions wherever you are unsure who is speaking.` : `Transcript:
+${audioName ? `The interview is in the audio file I've attached (${audioName}). Transcribe it yourself first, then do the debrief from your transcript. Audio has no speaker names, so use attribution_checks wherever you are unsure who is speaking.` : `Transcript:
 """
 ${transcript}
 """`}`;
@@ -1078,20 +1089,33 @@ function renderInterviews(){
     const landed = q.filter(x=>x.landed==="yes").length;
     return `<details class="card iv" data-id="${iv.id}">
       <summary><div class="row" style="justify-content:space-between;width:100%"><div><b>${esc(iv.company||d.company||"Interview")}</b> <span class="muted small">${esc(iv.round||d.round||"")} · ${esc(iv.date||"")}</span></div>
-      <span class="small muted">${q.length} questions · ${landed} landed</span></div></summary>
+      <span class="small muted">${q.length} question${q.length===1?"":"s"} · ${landed} landed</span></div></summary>
       ${debriefHTML(iv)}
       <div class="row" style="margin-top:12px"><button class="btn" data-act="prep" data-id="${iv.id}">Prep card for the next round</button><button class="btn" data-act="del" data-id="${iv.id}">Delete</button></div>
     </details>`;
   }).join("");
 }
 const li = arr => (arr||[]).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("");
+// Lines where the note taker may have mixed up speakers. Older debriefs stored plain strings.
+const checksOf = d => (d.attribution_checks || d.attribution_questions || []).map(c => typeof c === "string" ? {quote:c, guess:""} : {quote:String(c.quote||""), guess:String(c.guess||"")}).filter(c=>c.quote);
+function attributionHTML(iv){
+  const checks = checksOf(iv.debrief || {}); if(!checks.length) return "";
+  const answers = iv.speakers || {};
+  const answered = checks.filter((c,i)=>answers[i] && answers[i] !== "unsure");
+  const opt = (i, val, label) => `<label class="seg"><input type="radio" name="spk-${iv.id}-${i}" value="${val}" data-spk="${iv.id}" data-i="${i}" ${answers[i]===val?"checked":""}><span>${label}</span></label>`;
+  return `<div class="note small" style="margin-top:10px"><b>Who said this?</b> The note taker may have mixed up speakers. Pick one for each line; your answers are saved.
+    <div style="margin-top:8px">${checks.map((c,i)=>`<div class="spk"><div>“${esc(c.quote)}”${c.guess?` <span class="muted">(we guessed ${c.guess === "me" ? "you" : "the interviewer"})</span>`:""}</div>
+      <div class="segs">${opt(i,"me","Me")}${opt(i,"interviewer","Interviewer")}${opt(i,"unsure","Not sure")}</div></div>`).join("")}</div>
+    ${answered.some((c,i)=>{ const k = checks.indexOf(c); return c.guess && answers[k] !== c.guess; }) ? `<div class="row" style="margin-top:8px"><button class="btn" data-act="reattr" data-id="${iv.id}">Update the debrief with my answers</button><span class="muted">Some answers differ from our guess, so the analysis may change.</span></div>` : ""}
+  </div>`;
+}
 function debriefHTML(iv){
   const d = iv.debrief || {}, om = d.operating_manual || {}, rf = d.red_flags || {};
   const flags = [...(rf.possibly_unlawful_questions||[]).map(x=>["bad","Possibly unlawful question",x]),
     ...(rf.resume_misstated||[]).map(x=>["bad","Resume misstated",x]), ...(rf.scope_changes||[]).map(x=>["warn","Scope changed",x]),
     ...(iv.panel?[["warn","Panel observation",iv.panel]]:[])];
   return `
-    ${(d.attribution_questions||[]).length ? `<div class="note small" style="margin-top:10px"><b>Check who said what.</b> The note taker may have mixed up speakers here. If any of these are wrong, fix the transcript and run the debrief again.<ul>${li(d.attribution_questions)}</ul></div>`:""}
+    ${attributionHTML(iv)}
     <div class="grid two" style="margin-top:12px">
       <div><h3>What fell flat</h3><ul class="small">${li(d.fell_flat)}</ul></div>
       <div><h3>What made them lean in</h3><ul class="small">${li(d.leaned_in)}</ul></div>
@@ -1266,9 +1290,37 @@ document.addEventListener("click", async e=>{
     App.interviews = App.interviews.filter(iv=>iv.id !== t.dataset.id); await Store.set("interviews", App.interviews);
     renderInterviews(); renderWatch(currentRows);
   }
+  if(t.dataset && t.dataset.act === "reattr"){
+    const iv = App.interviews.find(x=>x.id === t.dataset.id); if(!iv) return;
+    const checks = checksOf(iv.debrief), answers = iv.speakers || {};
+    const corrections = checks.map((c,i)=>({quote:c.quote, who:answers[i]})).filter(c=>c.who === "me" || c.who === "interviewer");
+    if(!iv.transcript){ flash("This debrief came from audio sent to your chatbot, so there's no transcript saved here to re-run."); return; }
+    t.disabled = true; t.textContent = "Updating…";
+    try{
+      const d = await AI.json(debriefPrompt({transcript: iv.transcript, company: iv.company, role: iv.role, round: iv.round, standards: App.standards, storyTitles: App.stories.map(s=>s.title), corrections}),
+        {title:"Update the debrief"});
+      if(!d || !Array.isArray(d.questions_asked_of_me)) throw {code:"shape"};
+      iv.debrief = d; iv.speakers = {};
+      // Only new stories are filed again; the question bank already counted this interview.
+      fileIntoBanks({...iv, debrief:{new_stories: d.new_stories || []}});
+      await Store.set("interviews", App.interviews); await Store.set("stories", App.stories);
+      renderInterviews(); renderBanks(); renderWatch(currentRows);
+      const again = $(`#ivlist details[data-id="${iv.id}"]`); if(again) again.open = true;
+      flash("Debrief updated with your answers.");
+    }catch(e){ if(!(e && e.code === "cancelled")) flash("Couldn't update the debrief. Your answers are still saved."); t.disabled = false; t.textContent = "Update the debrief with my answers"; }
+    return;
+  }
   if(t.dataset && t.dataset.act === "prep"){ show("prep"); flash("Prep cards arrive in the next build."); }
 });
-document.addEventListener("change", e=>{
+document.addEventListener("change", async e=>{
+  if(e.target.dataset && e.target.dataset.spk){
+    const iv = App.interviews.find(x=>x.id === e.target.dataset.spk); if(!iv) return;
+    iv.speakers = {...(iv.speakers||{}), [e.target.dataset.i]: e.target.value};
+    await Store.set("interviews", App.interviews);
+    const box = e.target.closest(".note"); const open = e.target.closest("details");
+    renderInterviews(); const again = $(`#ivlist details[data-id="${iv.id}"]`); if(again && open) again.open = true;
+    return;
+  }
   if(e.target.id === "importfile" && e.target.files[0]) importBackup(e.target.files[0]);
   if(e.target.id === "ivfile" && e.target.files[0]) Transcribe.pick(e.target.files[0]);
 });
