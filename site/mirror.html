@@ -197,6 +197,10 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
         <p id="ivaudiostatus" style="margin:8px 0 0"></p>
       </div>
       <textarea id="ivtranscript" placeholder="Paste the transcript or your notes here" style="margin-top:10px;min-height:180px"></textarea>
+      <div class="note small" id="ivwho" hidden style="margin-top:10px">
+        <b>Which of these is you?</b> <span class="muted">Your transcript labels its speakers. Pick yours so the debrief knows from the start which lines are yours.</span>
+        <div class="row" id="ivwhoopts" style="margin-top:8px"></div>
+      </div>
       <div class="row" style="margin-top:10px"><button class="btn primary" id="ivrun">Debrief it</button><span class="small muted" id="ivstatus"></span></div>
       <p class="small" id="iverr" style="color:var(--bad-ink);margin:8px 0 0"></p>
     </section>
@@ -1029,6 +1033,8 @@ Rules:
 - Stronger answers must stay true to my claims below. Do not invent experience, tools, numbers, or titles.
 - Write in plain language. No lists of three for rhythm, no "not X but Y" constructions.
 
+Lines labelled "Me" are mine; lines labelled "Interviewer" are theirs. Trust those labels.
+
 What I told you about this interview: company ${company || "(read it from the transcript)"}, role ${role || "(read it from the transcript)"}, round ${round || "(read it from the transcript)"}.
 
 My standards and claims I can defend:
@@ -1156,24 +1162,52 @@ function debriefHTML(iv){
     ${flags.length?`<h3 style="margin-top:12px">Red flags logged to posting watch</h3><div class="small">${flags.map(([c,t,e])=>`<div><span class="flag ${c}">${t}</span> ${esc(e)}</div>`).join("")}</div>`:""}`;
 }
 
+/* ---------- who is "me" in a labelled transcript ---------- */
+// Note takers label speakers ("Speaker 1:", "Dana Lee:", "[00:01:02] Sam:"). Asking once
+// which label is the job seeker, before the AI sees anything, prevents most mix-ups.
+const LABEL_RE = /^\s*(?:\[?\(?\d{1,2}:\d{2}(?::\d{2})?\)?\]?\s*)?([A-Z][A-Za-z.'’-]*(?: [A-Z][A-Za-z.'’-]*){0,3}|Speaker \d+|SPEAKER_\d+)\s*:/;
+function speakerLabels(transcript){
+  const counts = {};
+  transcript.split("\n").forEach(l => { const m = l.match(LABEL_RE); if(m && !/^(Note|Notes|Date|Time|Re|Subject)$/i.test(m[1])) counts[m[1]] = (counts[m[1]]||0) + 1; });
+  return Object.entries(counts).filter(([,n]) => n >= 2).sort((a,b)=>b[1]-a[1]).map(([k])=>k).slice(0,8);
+}
+function markMe(transcript, me){
+  if(!me) return transcript;
+  return transcript.split("\n").map(l => { const m = l.match(LABEL_RE);
+    if(!m) return l;
+    const tag = m[1] === me ? `Me (${me})` : /^me$/i.test(m[1]) ? m[1] : `Interviewer (${m[1]})`;
+    return l.replace(m[1], tag); }).join("\n");
+}
+let pickedMe = null;   // null = not asked yet, "" = none of these
+
 async function runDebrief(){
   const transcript = $("#ivtranscript").value.trim();
   const err = $("#iverr"); err.textContent = "";
   if(!$("#ivconsent").checked){ err.textContent = "Confirm the interviewers knew the conversation was recorded or transcribed. Without consent, paste your own notes instead."; return; }
   const audioName = !transcript && Transcribe.chatbotFile ? Transcribe.chatbotFile : "";
   if(!audioName && transcript.length < 200){ err.textContent = "Paste the transcript or your notes first (at least a few paragraphs), or upload a file."; return; }
+  // Ask which speaker is "me" once per transcript, when the transcript has labels.
+  if(transcript && pickedMe === null){
+    const labels = speakerLabels(transcript).filter(l => !/^me$/i.test(l));
+    if(labels.length >= 2){
+      $("#ivwhoopts").innerHTML = labels.map(l=>`<button class="btn" data-me="${esc(l)}">${esc(l)}</button>`).join("") + `<button class="btn" data-me="">None of these</button>`;
+      $("#ivwho").hidden = false; $("#ivwho").scrollIntoView({block:"nearest"}); return;
+    }
+    pickedMe = "";
+  }
+  const sent = markMe(transcript, pickedMe);
   const meta = {company: $("#ivcompany").value.trim(), role: $("#ivrole").value.trim(), round: $("#ivround").value, date: $("#ivdate").value || today(), panel: $("#ivpanel").value.trim()};
   const btn = $("#ivrun"); btn.disabled = true; const status = $("#ivstatus");
   status.textContent = "Working on it. This can take a minute for a long interview.";
   try{
-    const debrief = await AI.json(debriefPrompt({transcript, ...meta, audioName, standards: App.standards, storyTitles: App.stories.map(s=>s.title)}),
+    const debrief = await AI.json(debriefPrompt({transcript: sent, ...meta, audioName, standards: App.standards, storyTitles: App.stories.map(s=>s.title)}),
       {title:"Interview debrief", onStatus: s=>status.textContent = s, forcePaste: !!audioName,
        note: audioName ? `Attach your audio file (${audioName}) in ChatGPT or Gemini along with this prompt. Not every plan accepts audio; if yours doesn't, transcribe it here instead.` : ""});
     if(!debrief || !Array.isArray(debrief.questions_asked_of_me)) throw {code:"shape"};
-    const iv = {id:uid(), ...meta, company: meta.company || debrief.company || "", role: meta.role || debrief.role || "", round: meta.round || debrief.round || "", transcript, debrief, createdAt: Date.now()};
+    const iv = {id:uid(), ...meta, company: meta.company || debrief.company || "", role: meta.role || debrief.role || "", round: meta.round || debrief.round || "", transcript: sent, debrief, createdAt: Date.now()};
     App.interviews.push(iv); await Store.set("interviews", App.interviews);
     fileIntoBanks(iv); await Store.set("questionsOfMe", App.questionsOfMe); await Store.set("questionsByMe", App.questionsByMe); await Store.set("stories", App.stories);
-    $("#ivtranscript").value = ""; status.textContent = ""; Transcribe.reset();
+    $("#ivtranscript").value = ""; status.textContent = ""; Transcribe.reset(); pickedMe = null; $("#ivwho").hidden = true;
     renderInterviews(); renderBanks(); renderWatch(currentRows);
     const first = $(`#ivlist details[data-id="${iv.id}"]`); if(first) first.open = true;
     flash("Debrief saved. Questions and stories were added to your banks.");
@@ -1233,7 +1267,7 @@ const Transcribe = {
     const name = file.name.toLowerCase();
     if(/\.(txt|md|vtt|srt)$/.test(name) || file.type.startsWith("text/")){
       const raw = await file.text();
-      $("#ivtranscript").value = /\.(vtt|srt)$/.test(name) ? captionsToText(raw) : raw;
+      $("#ivtranscript").value = /\.(vtt|srt)$/.test(name) ? captionsToText(raw) : raw; pickedMe = null; $("#ivwho").hidden = true;
       this.reset(); flash(`Loaded ${file.name}.`); return;
     }
     if(/\.(m4a|mp3|wav|webm|ogg|aac|mp4)$/.test(name) || file.type.startsWith("audio/")){
@@ -1286,7 +1320,7 @@ const Transcribe = {
       clearInterval(timer);
       const text = String(out && out.text || "").trim();
       if(!text) throw new Error("empty");
-      $("#ivtranscript").value = text;
+      $("#ivtranscript").value = text; pickedMe = null;
       this.file = null; $("#ivaudio").hidden = true;
       flash("Transcribed on your computer. Audio has no speaker names, so the debrief will ask who said what.");
     }catch(e){
@@ -1300,6 +1334,7 @@ const Transcribe = {
 document.addEventListener("click", async e=>{
   const t = e.target;
   if(t.id === "ivrun") runDebrief();
+  if(t.dataset && "me" in t.dataset && t.closest("#ivwho")){ pickedMe = t.dataset.me; $("#ivwho").hidden = true; runDebrief(); }
   if(t.id === "ivlocal") Transcribe.local();
   if(t.id === "ivchatbot") Transcribe.chatbot();
   if(t.id === "exportbtn") exportBackup();
@@ -1345,6 +1380,7 @@ document.addEventListener("change", async e=>{
   if(e.target.id === "ivfile" && e.target.files[0]) Transcribe.pick(e.target.files[0]);
 });
 document.addEventListener("input", e=>{
+  if(e.target.id === "ivtranscript"){ pickedMe = null; $("#ivwho").hidden = true; }
   if(e.target.id === "standards"){ clearTimeout(App.st); App.st = setTimeout(()=>{ App.standards = e.target.value; Store.set("standards", App.standards); }, 500); }
 });
 (async () => {

@@ -197,6 +197,10 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
         <p id="ivaudiostatus" style="margin:8px 0 0"></p>
       </div>
       <textarea id="ivtranscript" placeholder="Paste the transcript or your notes here" style="margin-top:10px;min-height:180px"></textarea>
+      <div class="note small" id="ivwho" hidden style="margin-top:10px">
+        <b>Which of these is you?</b> <span class="muted">Your transcript labels its speakers. Pick yours so the debrief knows from the start which lines are yours.</span>
+        <div class="row" id="ivwhoopts" style="margin-top:8px"></div>
+      </div>
       <div class="row" style="margin-top:10px"><button class="btn primary" id="ivrun">Debrief it</button><span class="small muted" id="ivstatus"></span></div>
       <p class="small" id="iverr" style="color:var(--bad-ink);margin:8px 0 0"></p>
     </section>
