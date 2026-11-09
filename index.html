@@ -3,43 +3,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Make the Mirror True</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#faf6f0; --surface:#ffffff; --surface-2:#f3ece2; --ink:#2a211c; --ink-2:#6f6259;
-  --line:#e6dccf; --ember:#c8501c; --ember-soft:#f7e2d6; --gold:#b98a1f; --sage:#5d7d5a;
-  --warn-bg:#fbefd9; --warn-ink:#8a5a07; --bad-bg:#f8e0dc; --bad-ink:#9b2f1f;
-  --flow:#c8501c; --flow-2:#b98a1f; --flow-3:#9a8d82; --flow-ok:#5d7d5a;
-  --shadow:0 1px 2px rgb(42 33 28 / .06), 0 8px 24px rgb(42 33 28 / .06);
-  --wr-scrim:rgb(42 33 28 / .45);
+  --bg:#ffffff; --surface:#ffffff; --surface-2:#f4f2f8; --ink:#1f1d24; --ink-2:#5e5a66;
+  --line:#e2dfea; --ember:#73649a; --ember-soft:#ece8f4; --gold:#2e3f8f; --sage:#3e9fa8;
+  --warn-bg:#fbeff6; --warn-ink:#9a3f72; --bad-bg:#f8e3ee; --bad-ink:#a8366f;
+  --flow:#3a6ea8; --flow-2:#da8fb9; --flow-3:#8f8c99; --flow-ok:#5bbec6; --on-accent:#ffffff;
+  --shadow:0 1px 2px rgb(31 29 36 / .06), 0 8px 24px rgb(31 29 36 / .06);
+  --wr-scrim:rgb(31 29 36 / .45);
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#17120f; --surface:#211a16; --surface-2:#2a221d; --ink:#f3ebe2; --ink-2:#b4a598;
-    --line:#3a2f28; --ember:#ee7a44; --ember-soft:#3b2318; --gold:#dcae45; --sage:#8fb38a;
-    --warn-bg:#3a2c12; --warn-ink:#f0c46a; --bad-bg:#3d1d17; --bad-ink:#f39a87;
-    --flow:#ee7a44; --flow-2:#dcae45; --flow-3:#7d7067; --flow-ok:#8fb38a;
+    --bg:#17151d; --surface:#201d28; --surface-2:#292533; --ink:#f1eff5; --ink-2:#b3aec0;
+    --line:#38334a; --ember:#a596cc; --ember-soft:#2f2940; --gold:#8f9de0; --sage:#7fd0d7;
+    --warn-bg:#3a2433; --warn-ink:#eba9cd; --bad-bg:#3d2131; --bad-ink:#f0a0c8;
+    --flow:#6f9fd6; --flow-2:#e3a6c8; --flow-3:#77738a; --flow-ok:#7fd0d7; --on-accent:#17151d;
     --shadow:0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
     --wr-scrim:rgb(0 0 0 / .6);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#17120f; --surface:#211a16; --surface-2:#2a221d; --ink:#f3ebe2; --ink-2:#b4a598;
-  --line:#3a2f28; --ember:#ee7a44; --ember-soft:#3b2318; --gold:#dcae45; --sage:#8fb38a;
-  --warn-bg:#3a2c12; --warn-ink:#f0c46a; --bad-bg:#3d1d17; --bad-ink:#f39a87;
-  --flow:#ee7a44; --flow-2:#dcae45; --flow-3:#7d7067; --flow-ok:#8fb38a;
+  --bg:#17151d; --surface:#201d28; --surface-2:#292533; --ink:#f1eff5; --ink-2:#b3aec0;
+    --line:#38334a; --ember:#a596cc; --ember-soft:#2f2940; --gold:#8f9de0; --sage:#7fd0d7;
+    --warn-bg:#3a2433; --warn-ink:#eba9cd; --bad-bg:#3d2131; --bad-ink:#f0a0c8;
+    --flow:#6f9fd6; --flow-2:#e3a6c8; --flow-3:#77738a; --flow-ok:#7fd0d7; --on-accent:#17151d;
   --shadow:0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
     --wr-scrim:rgb(0 0 0 / .6);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
-h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.01em;margin:0}
+h1,h2,h3{font-family:"DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;letter-spacing:-.01em;margin:0}
+h1{color:var(--ember)}
 h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.05}
 h2{font-size:1.45rem;margin-bottom:6px}
 h3{font-size:1.08rem}
@@ -48,11 +47,11 @@ h3{font-size:1.08rem}
 header{padding-block:12px 24px;border-bottom:1px solid var(--line);margin-bottom:22px}
 nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 0}
 nav.tabs button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:8px 16px;border-radius:999px;cursor:pointer}
-nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav.tabs button[aria-selected="true"]{background:var(--ember);color:var(--on-accent);border-color:var(--ember)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
 .grid{display:grid;gap:16px}
 .stats{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-.stat .n{font-family:Fraunces,Georgia,serif;font-size:2.1rem;font-weight:700;line-height:1}
+.stat .n{font-family:"DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:2.1rem;font-weight:700;line-height:1}
 .stat .l{color:var(--ink-2);font-size:.86rem;margin-top:6px}
 .stat.hl{background:var(--ember-soft);border-color:transparent}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -78,13 +77,13 @@ th{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--in
 .bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:80px}
 .bar>i{display:block;height:100%;background:var(--ember)}
 textarea{width:100%;min-height:120px;font:13px/1.45 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface-2);color:var(--ink)}
-svg text{font-family:Inter,system-ui,sans-serif}
+svg text{font-family:"DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif}
 .note{border-left:3px solid var(--gold);padding:8px 12px;background:var(--surface-2);border-radius:0 10px 10px 0}
 .pb-list{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .pb{cursor:pointer;text-align:left;font:inherit;color:inherit}
 .pb[aria-pressed="true"]{outline:2px solid var(--ember)}
-#convertby button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.pb .t{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.05rem}
+#convertby button[aria-pressed="true"]{background:var(--ember);color:var(--on-accent);border-color:var(--ember)}
+.pb .t{font-family:"DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;font-size:1.05rem}
 .pb .s{color:var(--ember);font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
 pre.play{white-space:pre-wrap;word-break:break-word;font:13px/1.55 ui-monospace,Menlo,monospace;background:var(--surface-2);border-radius:12px;padding:16px;max-height:460px;overflow:auto;margin:12px 0 0}
 .how{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -112,11 +111,11 @@ ul.bank li{margin-bottom:8px}
 .databar .btn{padding:5px 10px;font-size:.84rem}
 .overlay{position:fixed;inset:0;background:var(--wr-scrim);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:20}
 .overlay .card{max-width:720px;width:100%;margin-top:4vh}
-.step{font-family:Fraunces,Georgia,serif;font-weight:700;color:var(--ember);margin-right:6px}
+.step{font-family:"DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;color:var(--ember);margin-right:6px}
 #flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;box-shadow:var(--shadow);z-index:30;max-width:calc(100% - 32px)}
 .welcome{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:12px}
 .welcome button{text-align:left;font:inherit;color:inherit;cursor:pointer}
-.welcome button .t{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.15rem;display:block;margin-bottom:4px}
+.welcome button .t{font-family:"DejaVu Sans",Verdana,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;font-size:1.15rem;display:block;margin-bottom:4px}
 .checklist{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem;margin-top:6px}
 .checklist span::before{content:"○ ";color:var(--ink-2)}
 .checklist span.done{color:var(--ink-2);text-decoration:line-through}
