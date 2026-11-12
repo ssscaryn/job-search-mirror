@@ -62,7 +62,7 @@ nav.tabs button[aria-selected="true"]{background:var(--gold);color:var(--on-acce
 .stat:nth-child(5n){--sc:var(--ember)}
 .stat.hl{background:var(--bad-bg)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;text-decoration:none;display:inline-block}
 .btn.primary{background:var(--ember);border-color:var(--ember);color:var(--bg)}
 .muted{color:var(--ink-2)}
 .small{font-size:.86rem}
@@ -298,6 +298,7 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
         <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.ods,.csv,text/csv">
         <button class="btn" id="sample">Use the sample search</button>
         <button class="btn" id="template">Show the template</button>
+        <a class="btn" href="https://docs.google.com/spreadsheets/d/1eXoa9l-XFG8iX3xYEpTTUWUdZRY0iyLo/edit?usp=sharing" target="_blank" rel="noopener">Copy the Google Sheets template</a>
       </div>
       <div class="row small" id="sheetpick" hidden style="margin-top:12px"><label for="sheet"><b>Sheet</b></label><select id="sheet" class="btn"></select><span class="muted" id="sheetwhy"></span></div>
       <textarea id="paste" placeholder="Or paste CSV here" style="margin-top:12px"></textarea>
@@ -341,7 +342,7 @@ footer{margin-top:40px;color:var(--ink-2);font-size:.86rem;border-top:1px solid 
   </div>
   <div id="flash" hidden role="status"></div>
 
-  <footer>From the talk <i>Getting in Touch with Your Inner Narcissist to Accelerate Your Job Search</i> by Caryn Moore. The sample search is fictional. <a href="https://www.linkedin.com/in/caryn-moore-cisa-5036a91" target="_blank" rel="noopener" style="color:var(--ember);font-weight:600">Connect with Caryn on LinkedIn</a> · <a href="https://github.com/ssscaryn/job-search-mirror" target="_blank" rel="noopener" style="color:inherit">Source and playbooks on GitHub</a></footer>
+  <footer>From the talk <i>Getting in Touch with Your Inner Narcissist to Accelerate Your Job Search</i> by Caryn Moore. The sample search is fictional. <a href="https://www.linkedin.com/in/caryn-moore-cisa-5036a91" target="_blank" rel="noopener" style="color:var(--ember);font-weight:600">Connect with Caryn on LinkedIn</a> · <a href="https://docs.google.com/spreadsheets/d/1eXoa9l-XFG8iX3xYEpTTUWUdZRY0iyLo/edit?usp=sharing" target="_blank" rel="noopener" style="color:inherit">Blank tracker template (Google Sheets)</a> · <a href="https://github.com/ssscaryn/job-search-mirror" target="_blank" rel="noopener" style="color:inherit">Source and playbooks on GitHub</a></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
